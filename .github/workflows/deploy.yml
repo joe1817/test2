@@ -24,6 +24,10 @@ jobs:
 
       - name: Generate Website Files
         run: |
+          python3 collapse_book_paragraphs.py
+
+      - name: Generate Website Files
+        run: |
           python3 generate_site.py
 
       - name: Commit and Push Generated Output
