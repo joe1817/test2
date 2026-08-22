@@ -242,6 +242,54 @@ def generate_html_site(input_filename, output_dir="docs"):
 		border-color: #222222;
 	}
 
+	.drawer {
+		position: fixed;
+		top: calc(env(safe-area-inset-top, 0px) + 140px);
+		right: -80px;
+		width: 80px;
+		height: fit-content;
+		background-color: #181818;
+		border: 1px solid #333333;
+		border-top-left-radius: 8px;
+		border-bottom-left-radius: 8px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 20px 0;
+		gap: 16px;
+		z-index: 102;
+		transition: right 0.3s ease-in-out;
+	}
+	.drawer.open {
+		right: 0;
+	}
+	.drawer-btn {
+		background-color: #2a2a2a;
+		color: #4863a0;
+		border: 1px solid #444444;
+		width: 48px;
+		height: 48px;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		text-decoration: none;
+		font-size: 1.1rem;
+		transition: background 0.2s, border-color 0.2s, color 0.2s;
+	}
+	.drawer-btn:hover {
+		background-color: #333333;
+		border-color: #4863a0;
+		color: #ffffff;
+	}
+	.drawer-btn.disabled {
+		color: #555555;
+		pointer-events: none;
+		background-color: #161616;
+		border-color: #222222;
+	}
+
 	@media (min-width: 768px) {
 		.toolbar {
 			padding: 16px 24px;
@@ -269,6 +317,25 @@ def generate_html_site(input_filename, output_dir="docs"):
 </head>
 <body>
 	<div class="progress-bar" id="progressBar"></div>
+
+	<div class="drawer" id="sideDrawer" onclick="event.stopPropagation()">
+		<button class="drawer-btn" onclick="goHome()" title="Go Home">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+				<polyline points="9 22 9 12 15 12 15 22"/>
+			</svg>
+		</button>
+		<button class="drawer-btn" id="drawerPrev" title="Prev Chapter">&#9664;</button>
+		<button class="drawer-btn" id="drawerNext" title="Next Chapter">&#9654;</button>
+		<button class="drawer-btn" onclick="toggleFullScreen()" title="Full Screen">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M8 3H5a2 2 0 0 0-2 2v3" />
+				<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+				<path d="M3 16v3a2 2 0 0 0 2 2h3" />
+				<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+			</svg>
+		</button>
+	</div>
 
 	<div class="main-wrapper">
 		<div id="home-view">
@@ -317,7 +384,33 @@ def generate_html_site(input_filename, output_dir="docs"):
 			window.addEventListener("scroll", () => {{
 				updateProgress();
 			}});
+
+			document.addEventListener("click", (event) => {{
+				const drawer = document.getElementById("sideDrawer");
+				if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".drawer")) {{
+					drawer.classList.remove("open");
+				}} else {{
+					drawer.classList.toggle("open");
+				}}
+			}});
+
+			document.addEventListener("scroll", (event) => {{
+				const drawer = document.getElementById("sideDrawer");
+				drawer.classList.remove("open");
+			}});
 		}});
+
+		function toggleFullScreen() {{
+			if (!document.fullscreenElement) {{
+				document.documentElement.requestFullscreen().catch((err) => {{
+					console.error("Error attempting to enable full-screen mode:", err.message);
+				}});
+			}} else {{
+				if (document.exitFullscreen) {{
+					document.exitFullscreen();
+				}}
+			}}
+		}}
 
 		function loadChapter(chNum) {{
 			renderChapter(chNum, true);
@@ -325,6 +418,8 @@ def generate_html_site(input_filename, output_dir="docs"):
 
 		function goHome() {{
 			renderHome(true);
+			const drawer = document.getElementById("sideDrawer");
+			drawer.classList.remove("open");
 		}}
 
 		function renderHome(pushHistory = true) {{
@@ -350,6 +445,25 @@ def generate_html_site(input_filename, output_dir="docs"):
 			const nextLink = ch.next !== null ? `onclick="loadChapter(${{ch.next}})"` : `class="btn-link disabled"`;
 			const prevLabel = ch.prev !== null ? `Ch. ${{ch.prev}}` : "Ch. —";
 			const nextLabel = ch.next !== null ? `Ch. ${{ch.next}}` : "Ch. —";
+
+			const drawerPrevBtn = document.getElementById("drawerPrev");
+			const drawerNextBtn = document.getElementById("drawerNext");
+
+			if (ch.prev !== null) {{
+				drawerPrevBtn.setAttribute("onclick", `loadChapter(${{ch.prev}}); document.getElementById("sideDrawer").classList.remove("open");`);
+				drawerPrevBtn.classList.remove("disabled");
+			}} else {{
+				drawerPrevBtn.removeAttribute("onclick");
+				drawerPrevBtn.classList.add("disabled");
+			}}
+
+			if (ch.next !== null) {{
+				drawerNextBtn.setAttribute("onclick", `loadChapter(${{ch.next}}); document.getElementById("sideDrawer").classList.remove("open");`);
+				drawerNextBtn.classList.remove("disabled");
+			}} else {{
+				drawerNextBtn.removeAttribute("onclick");
+				drawerNextBtn.classList.add("disabled");
+			}}
 
 			let paragraphsHtml = "";
 			ch.paragraphs.forEach(p => {{
