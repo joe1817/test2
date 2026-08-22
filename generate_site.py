@@ -1,5 +1,6 @@
 import os
 import re
+import json
 
 def generate_html_site(input_filename, output_dir="docs"):
 	if not os.path.exists(output_dir):
@@ -50,19 +51,68 @@ def generate_html_site(input_filename, output_dir="docs"):
 		print("No chapters found in the specified format.")
 		return
 
-	index_css = """body {
+	chapters_dict = {}
+	total_chapters = len(chapter_data)
+	for index, ch in enumerate(chapter_data):
+		current_num = ch["num"]
+		prev_num = chapter_data[index - 1]["num"] if index > 0 else None
+		next_num = chapter_data[index + 1]["num"] if index < total_chapters - 1 else None
+
+		chapters_dict[current_num] = {
+			"num": current_num,
+			"title": ch["title"],
+			"paragraphs": ch["paragraphs"],
+			"prev": prev_num,
+			"next": next_num
+		}
+
+	chapters_json = json.dumps(chapters_dict, ensure_ascii=False)
+
+	site_css = """* { box-sizing: border-box; }
+	html {
 		background-color: #121212;
 		color: #e0e0e0;
 		font-family: sans-serif;
-		max-width: 800px;
-		margin: 40px auto;
-		padding: 0 20px;
-		line-height: 1.6;
+		height: 100vh;
+		overflow-y: auto;
+		scrollbar-gutter: stable;
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
-	h1 {
+	html::-webkit-scrollbar {
+		display: none;
+	}
+	body {
+		background-color: #121212;
+		color: #e0e0e0;
+		font-family: 'Inter', sans-serif;
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+		overflow-x: hidden;
+	}
+	.progress-bar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		height: 3px;
+		background-color: #4863a0;
+		width: 0%;
+		z-index: 101;
+		transform-origin: left;
+	}
+
+	.main-wrapper {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 40px 20px 40px 20px;
+	}
+	.book-title {
 		font-family: "Georgia", "Cambria", "Times New Roman", serif;
 		color: #ffffff;
 		text-align: center;
+		font-size: 2.5rem;
+		margin-top: 20px;
 	}
 	.chapter-grid {
 		display: grid;
@@ -81,6 +131,7 @@ def generate_html_site(input_filename, output_dir="docs"):
 		font-weight: bold;
 		font-size: 1rem;
 		transition: background 0.2s, border-color 0.2s;
+		cursor: pointer;
 	}
 	.chapter-box:hover {
 		background: #2a2a2a;
@@ -117,46 +168,20 @@ def generate_html_site(input_filename, output_dir="docs"):
 	}
 	.github-link {
 		text-align: center;
+		margin-top: 30px;
 	}
 	a {
 		color: #4863a0;
 		text-decoration: none;
+		cursor: pointer;
 	}
-"""
-
-	chapter_css = """* { box-sizing: border-box; }
-	html {
-		background-color: #121212;
-		color: #e0e0e0;
-		font-family: sans-serif;
-		height: 100vh;
-		overflow-y: auto;
-		scrollbar-gutter: stable;
-		-ms-overflow-style: none;
-		scrollbar-width: none;
-	}
-	html::-webkit-scrollbar {
+	.chapter-view {
 		display: none;
 	}
-	body {
-		background-color: #121212;
-		color: #e0e0e0;
-		font-family: 'Inter', sans-serif;
-		margin: 0;
-		padding: 0;
-		min-height: 100vh;
-		overflow-x: hidden;
+	.chapter-view.active {
+		display: block;
 	}
-	#content-container {
-		max-width: 800px;
-		margin: 0 auto;
-		padding: 40px 20px 60px 20px;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		min-height: 100vh;
-	}
-	h1 {
+	h1.chapter-heading {
 		font-family: "Georgia", "Cambria", "Times New Roman", serif;
 		color: #ffffff;
 		margin-top: 0;
@@ -186,10 +211,10 @@ def generate_html_site(input_filename, output_dir="docs"):
 		justify-content: space-between;
 		align-items: center;
 	}
-	.toolbar.top-toolbar {
+	.toolbar:first-of-type {
 		margin-bottom: 30px;
 	}
-	.toolbar.bottom-toolbar {
+	.toolbar:not(:first-of-type) {
 		margin-top: 40px;
 	}
 	.toolbar-group {
@@ -216,20 +241,6 @@ def generate_html_site(input_filename, output_dir="docs"):
 		background-color: #161616;
 		border-color: #222222;
 	}
-	.progress-bar {
-		position: fixed;
-		top: 0;
-		left: 0;
-		height: 3px;
-		background-color: #4863a0;
-		width: 0%;
-		z-index: 101;
-		transform-origin: left;
-		transition: width 0.1s ease-out;
-	}
-	.progress-bar.no-transition {
-		transition: none;
-	}
 
 	@media (min-width: 768px) {
 		.toolbar {
@@ -243,127 +254,8 @@ def generate_html_site(input_filename, output_dir="docs"):
 """
 
 	os.makedirs(os.path.join(output_dir, "styles"), exist_ok=True)
-	with open(os.path.join(output_dir, "styles", "chapter.css"), "w", encoding="utf-8") as f:
-		f.write(chapter_css)
 	with open(os.path.join(output_dir, "styles", "index.css"), "w", encoding="utf-8") as f:
-		f.write(index_css)
-
-	total_chapters = len(chapter_data)
-
-	for index, ch in enumerate(chapter_data):
-		current_num = ch["num"]
-		filename = f"chapter_{current_num}.html"
-
-		prev_num = chapter_data[index - 1]["num"] if index > 0 else None
-		next_num = chapter_data[index + 1]["num"] if index < total_chapters - 1 else None
-
-		prev_link = f"chapter_{prev_num}.html" if prev_num is not None else "#"
-		next_link = f"chapter_{next_num}.html" if next_num is not None else "#"
-
-		prev_ch_label = f"Ch. {prev_num}" if prev_num is not None else "Ch. —"
-		next_ch_label = f"Ch. {next_num}" if next_num is not None else "Ch. —"
-
-		paragraphs_html = "".join([f"<p>{p}</p>" for p in ch["paragraphs"]])
-
-		chapter_js_content = f"""
-const currentChapterNum = {current_num};
-
-window.addEventListener("DOMContentLoaded", () => {{
-	recordChapterView(currentChapterNum);
-	updateProgress();
-
-	window.addEventListener("scroll", () => {{
-		updateProgress();
-	}});
-}});
-
-function getCookie(name) {{
-	const value = `; ${{document.cookie}}`;
-	const parts = value.split(`; ${{name}}=`);
-	if (parts.length === 2) return parts.pop().split(";").shift();
-	return "";
-}}
-
-function recordChapterView(chNum) {{
-	let history = [];
-	const cookieVal = getCookie("reading_history");
-	if (cookieVal) {{
-		try {{
-			history = JSON.parse(decodeURIComponent(cookieVal));
-		}} catch(e) {{
-			history = [];
-		}}
-	}}
-	history = history.filter(num => num !== chNum);
-	history.push(chNum);
-	const d = new Date();
-	d.setTime(d.getTime() + (365*24*60*60*1000));
-	document.cookie = "reading_history=" + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/";
-}}
-
-function updateProgress() {{
-	const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
-	const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-	const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
-	document.getElementById("progressBar").style.width = scrolled + "%";
-}}
-"""
-
-		chapter_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{ch["title"]} - {book_title}</title>
-	<link rel="stylesheet" href="styles/chapter.css">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-</head>
-<body>
-	<div class="progress-bar no-transition" id="progressBar"></div>
-
-	<div id="content-container">
-		<div class="toolbar top-toolbar">
-			<div class="toolbar-group">
-				<a class="btn-link" href="index.html">Home</a>
-			</div>
-			<div class="toolbar-group">
-				<a class="btn-link {'' if prev_num is not None else 'disabled'}" href="{prev_link}">&larr; {prev_ch_label}</a>
-				<a class="btn-link {'' if next_num is not None else 'disabled'}" href="{next_link}">{next_ch_label} &rarr;</a>
-			</div>
-		</div>
-
-		<p class="chapter-num">Chapter {ch["num"]}</p>
-		<h1 id="chapter-title">{ch["title"]}</h1>
-		{paragraphs_html}
-
-		<div class="toolbar bottom-toolbar">
-			<div class="toolbar-group">
-				<a class="btn-link" href="index.html">Home</a>
-			</div>
-			<div class="toolbar-group">
-				<a class="btn-link {'' if prev_num is not None else 'disabled'}" href="{prev_link}">&larr; {prev_ch_label}</a>
-				<a class="btn-link {'' if next_num is not None else 'disabled'}" href="{next_link}">{next_ch_label} &rarr;</a>
-			</div>
-		</div>
-	</div>
-
-	<script>
-	{chapter_js_content}
-	</script>
-	<script>
-		window.addEventListener("load", () => {{
-			setTimeout(() => {{
-				document.getElementById("progressBar").classList.remove("no-transition");
-			}}, 50);
-		}});
-	</script>
-</body>
-</html>
-"""
-
-		with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-			f.write(chapter_html)
+		f.write(site_css)
 
 	index_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -372,70 +264,194 @@ function updateProgress() {{
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{book_title}</title>
 	<link rel="stylesheet" href="styles/index.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
 </head>
 <body>
-	<h1>{book_title}</h1>
-	<div class="chapter-grid">
+	<div class="progress-bar" id="progressBar"></div>
+
+	<div class="main-wrapper">
+		<div id="home-view">
+			<h1 class="book-title">{book_title}</h1>
+
+			<div class="chapter-grid">
 """
 
 	for ch in chapter_data:
-		filename = f"chapter_{ch['num']}.html"
-		index_html += f'        <a href="{filename}" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
+		index_html += f'                <a onclick="loadChapter({ch["num"]})" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
 
-	index_html += """    </div>
+	index_html += f"""            </div>
 
-	<div class="reset-container">
-		<button id="reset-progress-btn" onclick="resetProgress()">Reset Reading Progress</button>
+			<div class="reset-container">
+				<button id="reset-progress-btn" onclick="resetProgress()">Reset Reading Progress</button>
+			</div>
+
+			<p class="github-link"><a href="https://github.com/joe1817/test2">Github</a></p>
+		</div>
+
+		<div id="chapter-container" class="chapter-view"></div>
 	</div>
-	<p class="github-link"><a href="https://github.com/joe1817/test2">Github</a></p>
 
 	<script>
-		document.addEventListener("DOMContentLoaded", () => {
-			loadProgress();
-		});
+		const bookData = {chapters_json};
 
-		function getCookie(name) {
-			const value = `; ${document.cookie}`;
-			const parts = value.split(`; ${name}=`);
+		document.addEventListener("DOMContentLoaded", () => {{
+			loadProgress();
+
+			window.addEventListener("popstate", (event) => {{
+				if (event.state && event.state.chapter) {{
+					renderChapter(event.state.chapter, false);
+				}} else {{
+					renderHome(false);
+				}}
+			}});
+
+			const hash = window.location.hash;
+			if (hash.startsWith("#chapter-")) {{
+				const chNum = parseInt(hash.replace("#chapter-", ""));
+				if (bookData[chNum]) {{
+					renderChapter(chNum, false);
+				}}
+			}}
+
+			window.addEventListener("scroll", () => {{
+				updateProgress();
+			}});
+		}});
+
+		function loadChapter(chNum) {{
+			renderChapter(chNum, true);
+		}}
+
+		function goHome() {{
+			renderHome(true);
+		}}
+
+		function renderHome(pushHistory = true) {{
+			if (pushHistory) {{
+				history.pushState({{ chapter: null }}, "", window.location.pathname);
+			}}
+			document.getElementById("chapter-container").classList.remove("active");
+			document.getElementById("home-view").style.display = "block";
+			window.scrollTo(0, 0);
+			updateProgress();
+			loadProgress();
+		}}
+
+		function renderChapter(chNum, pushHistory = true) {{
+			const ch = bookData[chNum];
+			if (!ch) return;
+
+			if (pushHistory) {{
+				history.pushState({{ chapter: chNum }}, "", `#chapter-${{chNum}}`);
+			}}
+
+			const prevLink = ch.prev !== null ? `onclick="loadChapter(${{ch.prev}})"` : `class="btn-link disabled"`;
+			const nextLink = ch.next !== null ? `onclick="loadChapter(${{ch.next}})"` : `class="btn-link disabled"`;
+			const prevLabel = ch.prev !== null ? `Ch. ${{ch.prev}}` : "Ch. —";
+			const nextLabel = ch.next !== null ? `Ch. ${{ch.next}}` : "Ch. —";
+
+			let paragraphsHtml = "";
+			ch.paragraphs.forEach(p => {{
+				paragraphsHtml += `<p>${{p}}</p>`;
+			}});
+
+			const toolbarHtml = `
+				<div class="toolbar">
+					<div class="toolbar-group">
+						<a class="btn-link" onclick="goHome()">Home</a>
+					</div>
+					<div class="toolbar-group">
+						<a class="btn-link ${{ch.prev !== null ? '' : 'disabled'}}" ${{prevLink}}>&larr; ${{prevLabel}}</a>
+						<a class="btn-link ${{ch.next !== null ? '' : 'disabled'}}" ${{nextLink}}>${{nextLabel}} &rarr;</a>
+					</div>
+				</div>
+			`;
+
+			const container = document.getElementById("chapter-container");
+			container.innerHTML = `
+				${{toolbarHtml}}
+				<p class="chapter-num">Chapter ${{ch.num}}</p>
+				<h1 class="chapter-heading">${{ch.title}}</h1>
+				${{paragraphsHtml}}
+				${{toolbarHtml}}
+			`;
+
+			document.getElementById("home-view").style.display = "none";
+			container.classList.add("active");
+			window.scrollTo(0, 0);
+
+			recordChapterView(ch.num);
+			updateProgress();
+		}}
+
+		function getCookie(name) {{
+			const value = `; ${{document.cookie}}`;
+			const parts = value.split(`; ${{name}}=`);
 			if (parts.length === 2) return parts.pop().split(";").shift();
 			return "";
-		}
+		}}
 
-		function loadProgress() {
-			document.querySelectorAll(".chapter-box").forEach(box => {
+		function recordChapterView(chNum) {{
+			let history = [];
+			const cookieVal = getCookie("reading_history");
+			if (cookieVal) {{
+				try {{
+					history = JSON.parse(decodeURIComponent(cookieVal));
+				}} catch(e) {{
+					history = [];
+				}}
+			}}
+			history = history.filter(num => num !== chNum);
+			history.push(chNum);
+			const d = new Date();
+			d.setTime(d.getTime() + (365*24*60*60*1000));
+			document.cookie = "reading_history=" + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
+			loadProgress();
+		}}
+
+		function loadProgress() {{
+			document.querySelectorAll(".chapter-box").forEach(box => {{
 				box.classList.remove("viewed", "latest-viewed");
-			});
+			}});
 
 			const historyCookie = getCookie("reading_history");
-			if (historyCookie) {
-				try {
+			if (historyCookie) {{
+				try {{
 					const history = JSON.parse(decodeURIComponent(historyCookie));
-					if (Array.isArray(history) && history.length > 0) {
+					if (Array.isArray(history) && history.length > 0) {{
 						const latest = history[history.length - 1];
 
-						history.forEach(chNum => {
-							const box = document.querySelector(`.chapter-box[data-chapter="${chNum}"]`);
-							if (box) {
-								if (chNum === latest) {
+						history.forEach(chNum => {{
+							const box = document.querySelector(`.chapter-box[data-chapter="${{chNum}}"]`);
+							if (box) {{
+								if (chNum === latest) {{
 									box.classList.add("latest-viewed");
-								} else {
+								}} else {{
 									box.classList.add("viewed");
-								}
-							}
-						});
-					}
-				} catch (e) {
+								}}
+							}}
+						}});
+					}}
+				}} catch (e) {{
 					console.error("Could not parse reading history cookie", e);
-				}
-			}
-		}
+				}}
+			}}
+		}}
 
-		function resetProgress() {
-			if (window.confirm("Are you sure you want to reset your reading progress?")) {
+		function resetProgress() {{
+			if (window.confirm("Are you sure you want to reset your reading progress?")) {{
 				document.cookie = "reading_history=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
 				loadProgress();
-			}
-		}
+			}}
+		}}
+
+		function updateProgress() {{
+			const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+			const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+			const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+			document.getElementById("progressBar").style.width = scrolled + "%";
+		}}
 	</script>
 </body>
 </html>
@@ -447,7 +463,7 @@ function updateProgress() {{
 	with open(os.path.join(output_dir, ".nojekyll"), "a") as f:
 		pass
 
-	print(f"Successfully generated HTML site in the '{output_dir}' directory.")
+	print(f"Successfully generated single-page HTML site in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
 	generate_html_site("_processed_book.txt")
