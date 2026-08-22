@@ -450,4 +450,4 @@ function updateProgress() {{
 	print(f"Successfully generated HTML site in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
-	generate_html_site("book.txt")
+	generate_html_site("_processed_book.txt")
