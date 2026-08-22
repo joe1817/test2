@@ -13,17 +13,6 @@ def generate_html_site(input_filename, output_dir="docs"):
 		return
 
 	book_title = lines[0]
-
-	toc_end_index = -1
-	for idx, line in enumerate(lines):
-		if line == "*****":
-			toc_end_index = idx
-			break
-
-	if toc_end_index == -1:
-		print("Error: Could not find the '*****' separator marking the end of the Table of Contents.")
-		return
-
 	chapter_data = []
 	active_chapter_num = None
 	active_chapter_title = None
@@ -31,7 +20,8 @@ def generate_html_site(input_filename, output_dir="docs"):
 
 	chapter_pattern = re.compile(r"^Chapter\s+(\d+)\s*-\s*(.+)$", re.IGNORECASE)
 
-	idx = toc_end_index + 1
+	# Process all lines starting from line 1 (skipping title line 0)
+	idx = 1
 	while idx < len(lines):
 		line = lines[idx]
 		match = chapter_pattern.match(line)
@@ -60,84 +50,6 @@ def generate_html_site(input_filename, output_dir="docs"):
 	if not chapter_data:
 		print("No chapters found in the specified format.")
 		return
-
-	# Generate index.html
-	index_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{book_title}</title>
-	<link rel="stylesheet" href="styles/index.css">
-</head>
-<body>
-	<h1>{book_title}</h1>
-	<div class="chapter-grid">
-"""
-
-	for ch in chapter_data:
-		filename = f"chapter_{ch['num']}.html"
-		index_html += f'        <a href="{filename}" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
-
-	index_html += """    </div>
-
-	<div class="reset-container">
-		<button id="reset-progress-btn" onclick="resetProgress()">Reset Reading Progress</button>
-	</div>
-	<p class="github-link"><a href="https://github.com/joe1817/test2">Github</a></p>
-
-	<script>
-		document.addEventListener("DOMContentLoaded", () => {
-			loadProgress();
-		});
-
-		function getCookie(name) {
-			const value = `; ${document.cookie}`;
-			const parts = value.split(`; ${name}=`);
-			if (parts.length === 2) return parts.pop().split(";").shift();
-			return "";
-		}
-
-		function loadProgress() {
-			document.querySelectorAll(".chapter-box").forEach(box => {
-				box.classList.remove("viewed", "latest-viewed");
-			});
-
-			const historyCookie = getCookie("reading_history");
-			if (historyCookie) {
-				try {
-					const history = JSON.parse(decodeURIComponent(historyCookie));
-					if (Array.isArray(history) && history.length > 0) {
-						const latest = history[history.length - 1];
-
-						history.forEach(chNum => {
-							const box = document.querySelector(`.chapter-box[data-chapter="${chNum}"]`);
-							if (box) {
-								if (chNum === latest) {
-									box.classList.add("latest-viewed");
-								} else {
-									box.classList.add("viewed");
-								}
-							}
-						});
-					}
-				} catch (e) {
-					console.error("Could not parse reading history cookie", e);
-				}
-			}
-		}
-
-		function resetProgress() {
-			document.cookie = "reading_history=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
-			loadProgress();
-		}
-	</script>
-</body>
-</html>
-"""
-
-	with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
-		f.write(index_html)
 
 	# Index CSS
 	index_css = """body {
@@ -337,6 +249,8 @@ def generate_html_site(input_filename, output_dir="docs"):
 		pass
 
 	total_chapters = len(chapter_data)
+
+	# 1. Generate Chapter HTML files first
 	for index, ch in enumerate(chapter_data):
 		current_num = ch["num"]
 		filename = f"chapter_{current_num}.html"
@@ -396,26 +310,13 @@ function updateProgress() {{
 }}
 """
 
-		toolbar_html = f"""
-		<div class="toolbar">
-			<div class="toolbar-group">
-				<a class="btn-link" href="index.html">Home</a>
-			</div>
-
-			<div class="toolbar-group">
-				<a class="btn-link {{'' if prev_num is not None else 'disabled'}}" href="{prev_link}">&larr; {prev_ch_label}</a>
-				<a class="btn-link {{'' if next_num is not None else 'disabled'}}" href="{next_link}">{next_ch_label} &rarr;</a>
-			</div>
-		</div>
-		"""
-
 		chapter_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{ch["title"]} - {book_title}</title>
-	<link rel="stylesheet" href="styles/chapter.css"><!-- In your HTML <head> -->
+	<link rel="stylesheet" href="styles/chapter.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
 </head>
@@ -433,7 +334,7 @@ function updateProgress() {{
 			</div>
 		</div>
 
-		<p class="chapter-num">Chapter {ch["num"]}</h1>
+		<p class="chapter-num">Chapter {ch["num"]}</p>
 		<h1 id="chapter-title">{ch["title"]}</h1>
 		{paragraphs_html}
 
@@ -464,6 +365,84 @@ function updateProgress() {{
 
 		with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
 			f.write(chapter_html)
+
+	# 2. Generate index.html after all chapters are discovered and compiled
+	index_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{book_title}</title>
+	<link rel="stylesheet" href="styles/index.css">
+</head>
+<body>
+	<h1>{book_title}</h1>
+	<div class="chapter-grid">
+"""
+
+	for ch in chapter_data:
+		filename = f"chapter_{ch['num']}.html"
+		index_html += f'        <a href="{filename}" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
+
+	index_html += """    </div>
+
+	<div class="reset-container">
+		<button id="reset-progress-btn" onclick="resetProgress()">Reset Reading Progress</button>
+	</div>
+	<p class="github-link"><a href="https://github.com/joe1817/test2">Github</a></p>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			loadProgress();
+		});
+
+		function getCookie(name) {
+			const value = `; ${document.cookie}`;
+			const parts = value.split(`; ${name}=`);
+			if (parts.length === 2) return parts.pop().split(";").shift();
+			return "";
+		}
+
+		function loadProgress() {
+			document.querySelectorAll(".chapter-box").forEach(box => {
+				box.classList.remove("viewed", "latest-viewed");
+			});
+
+			const historyCookie = getCookie("reading_history");
+			if (historyCookie) {
+				try {
+					const history = JSON.parse(decodeURIComponent(historyCookie));
+					if (Array.isArray(history) && history.length > 0) {
+						const latest = history[history.length - 1];
+
+						history.forEach(chNum => {
+							const box = document.querySelector(`.chapter-box[data-chapter="${chNum}"]`);
+							if (box) {
+								if (chNum === latest) {
+									box.classList.add("latest-viewed");
+								} else {
+									box.classList.add("viewed");
+								}
+							}
+						});
+					}
+				} catch (e) {
+					console.error("Could not parse reading history cookie", e);
+				}
+			}
+		}
+
+		function resetProgress() {
+			document.cookie = "reading_history=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+			loadProgress();
+		}
+	</script>
+</body>
+</html>
+"""
+
+	with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
+		f.write(index_html)
 
 	with open(os.path.join(output_dir, "styles", "chapter.css"), "w", encoding="utf-8") as f:
 		f.write(chapter_css)
