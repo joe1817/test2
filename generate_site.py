@@ -6,6 +6,10 @@ def generate_html_site(input_filename, output_dir="docs"):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    chapters_dir = os.path.join(output_dir, "chapters")
+    if not os.path.exists(chapters_dir):
+        os.makedirs(chapters_dir)
+
     with open(input_filename, "r", encoding="utf-8") as file:
         lines = [line.strip() for line in file if line.strip()]
 
@@ -52,15 +56,15 @@ def generate_html_site(input_filename, output_dir="docs"):
         print("No chapters found in the specified format.")
         return
 
-    # Convert chapter_data into a JSON dictionary keyed by chapter number for fast JS lookup
-    chapters_dict = {}
     total_chapters = len(chapter_data)
+
+    # Write each chapter out to its own JSON file for fetch loading
     for index, ch in enumerate(chapter_data):
         current_num = ch["num"]
         prev_num = chapter_data[index - 1]["num"] if index > 0 else None
         next_num = chapter_data[index + 1]["num"] if index < total_chapters - 1 else None
 
-        chapters_dict[current_num] = {
+        chapter_payload = {
             "num": current_num,
             "title": ch["title"],
             "paragraphs": ch["paragraphs"],
@@ -68,7 +72,9 @@ def generate_html_site(input_filename, output_dir="docs"):
             "next": next_num
         }
 
-    chapters_json = json.dumps(chapters_dict, ensure_ascii=False)
+        chapter_filename = os.path.join(chapters_dir, f"chapter_{current_num}.json")
+        with open(chapter_filename, "w", encoding="utf-8") as json_file:
+            json.dump(chapter_payload, json_file, ensure_ascii=False)
 
     # Combined CSS maintaining your original aesthetic
     site_css = """* { box-sizing: border-box; }
@@ -246,7 +252,7 @@ def generate_html_site(input_filename, output_dir="docs"):
     with open(os.path.join(output_dir, ".nojekyll"), "a") as f:
         pass
 
-    # Construct complete single-page index.html with embedded JSON database
+    # Construct single-page index.html template
     index_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -285,15 +291,13 @@ def generate_html_site(input_filename, output_dir="docs"):
     </div>
 
     <script>
-        const bookData = {chapters_json};
-
         document.addEventListener("DOMContentLoaded", () => {{
             loadProgress();
 
             // Handle browser back/forward buttons
             window.addEventListener("popstate", (event) => {{
                 if (event.state && event.state.chapter) {{
-                    renderChapter(event.state.chapter, false);
+                    fetchAndRenderChapter(event.state.chapter, false);
                 }} else {{
                     renderHome(false);
                 }}
@@ -303,8 +307,8 @@ def generate_html_site(input_filename, output_dir="docs"):
             const hash = window.location.hash;
             if (hash.startsWith("#chapter-")) {{
                 const chNum = parseInt(hash.replace("#chapter-", ""));
-                if (bookData[chNum]) {{
-                    renderChapter(chNum, false);
+                if (!isNaN(chNum)) {{
+                    fetchAndRenderChapter(chNum, false);
                 }}
             }}
 
@@ -314,7 +318,7 @@ def generate_html_site(input_filename, output_dir="docs"):
         }});
 
         function loadChapter(chNum) {{
-            renderChapter(chNum, true);
+            fetchAndRenderChapter(chNum, true);
         }}
 
         function goHome() {{
@@ -332,51 +336,57 @@ def generate_html_site(input_filename, output_dir="docs"):
             loadProgress();
         }}
 
-        function renderChapter(chNum, pushHistory = true) {{
-            const ch = bookData[chNum];
-            if (!ch) return;
+        async function fetchAndRenderChapter(chNum, pushHistory = true) {{
+            try {{
+                const response = await fetch(`chapters/chapter_${{chNum}}.json`);
+                if (!response.ok) throw new Error("Chapter file missing");
+                const ch = await response.json();
 
-            if (pushHistory) {{
-                history.pushState({{ chapter: chNum }}, "", `#chapter-${{chNum}}`);
+                if (pushHistory) {{
+                    history.pushState({{ chapter: chNum }}, "", `#chapter-${{chNum}}`);
+                }}
+
+                const prevLink = ch.prev !== null ? `onclick="loadChapter(${{ch.prev}})"` : `class="btn-link disabled"`;
+                const nextLink = ch.next !== null ? `onclick="loadChapter(${{ch.next}})"` : `class="btn-link disabled"`;
+                const prevLabel = ch.prev !== null ? `Ch. ${{ch.prev}}` : "Ch. —";
+                const nextLabel = ch.next !== null ? `Ch. ${{ch.next}}` : "Ch. —";
+
+                let paragraphsHtml = "";
+                ch.paragraphs.forEach(p => {{
+                    paragraphsHtml += `<p>${{p}}</p>`;
+                }});
+
+                const toolbarHtml = `
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <a class="btn-link" onclick="goHome()">Home</a>
+                        </div>
+                        <div class="toolbar-group">
+                            <a class="btn-link ${{ch.prev !== null ? '' : 'disabled'}}" ${{prevLink}}>&larr; ${{prevLabel}}</a>
+                            <a class="btn-link ${{ch.next !== null ? '' : 'disabled'}}" ${{nextLink}}>${{nextLabel}} &rarr;</a>
+                        </div>
+                    </div>
+                `;
+
+                const container = document.getElementById("chapter-container");
+                container.innerHTML = `
+                    ${{toolbarHtml}}
+                    <p class="chapter-num">Chapter ${{ch.num}}</p>
+                    <h1 class="chapter-heading">${{ch.title}}</h1>
+                    ${{paragraphsHtml}}
+                    ${{toolbarHtml}}
+                `;
+
+                document.getElementById("home-view").style.display = "none";
+                container.classList.add("active");
+                window.scrollTo(0, 0);
+
+                recordChapterView(ch.num);
+                updateProgress();
+            }} catch (error) {{
+                console.error("Failed to load chapter:", error);
+                renderHome(true);
             }}
-
-            const prevLink = ch.prev !== null ? `onclick="loadChapter(${{ch.prev}})"` : `class="btn-link disabled"`;
-            const nextLink = ch.next !== null ? `onclick="loadChapter(${{ch.next}})"` : `class="btn-link disabled"`;
-            const prevLabel = ch.prev !== null ? `Ch. ${{ch.prev}}` : "Ch. —";
-            const nextLabel = ch.next !== null ? `Ch. ${{ch.next}}` : "Ch. —";
-
-            let paragraphsHtml = "";
-            ch.paragraphs.forEach(p => {{
-                paragraphsHtml += `<p>${{p}}</p>`;
-            }});
-
-            const toolbarHtml = `
-                <div class="toolbar">
-                    <div class="toolbar-group">
-                        <a class="btn-link" onclick="goHome()">Home</a>
-                    </div>
-                    <div class="toolbar-group">
-                        <a class="btn-link ${{ch.prev !== null ? '' : 'disabled'}}" ${{prevLink}}>&larr; ${{prevLabel}}</a>
-                        <a class="btn-link ${{ch.next !== null ? '' : 'disabled'}}" ${{nextLink}}>${{nextLabel}} &rarr;</a>
-                    </div>
-                </div>
-            `;
-
-            const container = document.getElementById("chapter-container");
-            container.innerHTML = `
-                ${{toolbarHtml}}
-                <p class="chapter-num">Chapter ${{ch.num}}</p>
-                <h1 class="chapter-heading">${{ch.title}}</h1>
-                ${{paragraphsHtml}}
-                ${{toolbarHtml}}
-            `;
-
-            document.getElementById("home-view").style.display = "none";
-            container.classList.add("active");
-            window.scrollTo(0, 0);
-
-            recordChapterView(ch.num);
-            updateProgress();
         }}
 
         function getCookie(name) {{
@@ -455,7 +465,7 @@ def generate_html_site(input_filename, output_dir="docs"):
     with open(os.path.join(output_dir, "styles", "index.css"), "w", encoding="utf-8") as f:
         f.write(site_css)
 
-    print(f"Successfully generated single-page HTML site in the '{output_dir}' directory.")
+    print(f"Successfully generated fetch-driven single-page site in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
     generate_html_site("processed_book.txt")
