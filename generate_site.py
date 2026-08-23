@@ -91,6 +91,24 @@ def generate_html_site(input_filename, output_dir="docs"):
 		min-height: 100vh;
 		overflow-x: hidden;
 	}
+
+	.letterbox-top, .letterbox-bottom {
+		display: none;
+		position: fixed;
+		left: 0;
+		width: 100%;
+		background-color: #181818;
+		z-index: 100;
+	}
+	.letterbox-top {
+		height: env(safe-area-inset-top, 0px);
+		top: 0;
+	}
+	.letterbox-bottom {
+		height: env(safe-area-inset-bottom, 0px);
+		bottom: 0;
+	}
+
 	.progress-bar {
 		position: fixed;
 		top: 0;
@@ -107,6 +125,18 @@ def generate_html_site(input_filename, output_dir="docs"):
 		margin: 0 auto;
 		padding: 40px 20px 40px 20px;
 	}
+
+	body.mobile-fullscreen .letterbox-top,
+	body.mobile-fullscreen .letterbox-bottom {
+		display: block;
+	}
+	body.mobile-fullscreen .progress-bar {
+		top: env(safe-area-inset-top, 0px);
+	}
+	body.mobile-fullscreen .main-wrapper {
+		padding: calc(env(safe-area-inset-top, 0px) + 40px) 20px calc(env(safe-area-inset-bottom, 0px) + 40px) 20px;
+	}
+
 	.book-title {
 		font-family: "Georgia", "Cambria", "Times New Roman", serif;
 		color: #ffffff;
@@ -316,6 +346,8 @@ def generate_html_site(input_filename, output_dir="docs"):
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
 </head>
 <body>
+	<div class="letterbox-top"></div>
+	<div class="letterbox-bottom"></div>
 	<div class="progress-bar" id="progressBar"></div>
 
 	<div class="drawer" id="sideDrawer" onclick="event.stopPropagation()">
@@ -397,6 +429,16 @@ def generate_html_site(input_filename, output_dir="docs"):
 			document.addEventListener("scroll", (event) => {{
 				const drawer = document.getElementById("sideDrawer");
 				drawer.classList.remove("open");
+			}});
+
+			document.addEventListener("fullscreenchange", () => {{
+				const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+				if (document.fullscreenElement && isMobile) {{
+					document.body.classList.add("mobile-fullscreen");
+				}} else {{
+					document.body.classList.remove("mobile-fullscreen");
+				}}
+				updateProgress();
 			}});
 		}});
 
