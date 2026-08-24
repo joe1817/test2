@@ -6,6 +6,10 @@ def generate_html_site(input_filename, output_dir="docs"):
 	if not os.path.exists(output_dir):
 		os.makedirs(output_dir)
 
+	chapters_dir = os.path.join(output_dir, "chapters")
+	if not os.path.exists(chapters_dir):
+		os.makedirs(chapters_dir)
+
 	with open(input_filename, "r", encoding="utf-8") as file:
 		lines = [line.strip() for line in file if line.strip()]
 
@@ -51,14 +55,14 @@ def generate_html_site(input_filename, output_dir="docs"):
 		print("No chapters found in the specified format.")
 		return
 
-	chapters_dict = {}
 	total_chapters = len(chapter_data)
+
 	for index, ch in enumerate(chapter_data):
 		current_num = ch["num"]
 		prev_num = chapter_data[index - 1]["num"] if index > 0 else None
 		next_num = chapter_data[index + 1]["num"] if index < total_chapters - 1 else None
 
-		chapters_dict[current_num] = {
+		chapter_payload = {
 			"num": current_num,
 			"title": ch["title"],
 			"paragraphs": ch["paragraphs"],
@@ -66,7 +70,9 @@ def generate_html_site(input_filename, output_dir="docs"):
 			"next": next_num
 		}
 
-	chapters_json = json.dumps(chapters_dict, ensure_ascii=False)
+		chapter_filename = os.path.join(chapters_dir, f"chapter_{current_num}.json")
+		with open(chapter_filename, "w", encoding="utf-8") as json_file:
+			json.dump(chapter_payload, json_file, ensure_ascii=False)
 
 	site_css = """* { box-sizing: border-box; }
 	html {
@@ -379,7 +385,7 @@ def generate_html_site(input_filename, output_dir="docs"):
 	for ch in chapter_data:
 		index_html += f'                <a onclick="loadChapter({ch["num"]})" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
 
-	index_html += f"""            </div>
+	index_html += """            </div>
 
 			<div class="reset-container">
 				<button id="reset-progress-btn" onclick="resetProgress()">Reset Reading Progress</button>
@@ -392,222 +398,226 @@ def generate_html_site(input_filename, output_dir="docs"):
 	</div>
 
 	<script>
-		const bookData = {chapters_json};
-
-		document.addEventListener("DOMContentLoaded", () => {{
+		document.addEventListener("DOMContentLoaded", () => {
 			loadProgress();
 
-			window.addEventListener("popstate", (event) => {{
-				if (event.state && event.state.chapter) {{
-					renderChapter(event.state.chapter, false);
-				}} else {{
+			window.addEventListener("popstate", (event) => {
+				if (event.state && event.state.chapter) {
+					fetchAndRenderChapter(event.state.chapter, false);
+				} else {
 					renderHome(false);
-				}}
-			}});
+				}
+			});
 
 			const hash = window.location.hash;
-			if (hash.startsWith("#chapter-")) {{
+			if (hash.startsWith("#chapter-")) {
 				const chNum = parseInt(hash.replace("#chapter-", ""));
-				if (bookData[chNum]) {{
-					renderChapter(chNum, false);
-				}}
-			}}
+				if (!isNaN(chNum)) {
+					fetchAndRenderChapter(chNum, false);
+				}
+			}
 
-			window.addEventListener("scroll", () => {{
+			window.addEventListener("scroll", () => {
 				updateProgress();
-			}});
+			});
 
-			document.addEventListener("click", (event) => {{
+			document.addEventListener("click", (event) => {
 				const drawer = document.getElementById("sideDrawer");
-				if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".drawer")) {{
+				if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".drawer")) {
 					drawer.classList.remove("open");
-				}} else {{
+				} else {
 					drawer.classList.toggle("open");
-				}}
-			}});
+				}
+			});
 
-			document.addEventListener("scroll", (event) => {{
+			document.addEventListener("scroll", (event) => {
 				const drawer = document.getElementById("sideDrawer");
 				drawer.classList.remove("open");
-			}});
+			});
 
-			document.addEventListener("fullscreenchange", () => {{
+			document.addEventListener("fullscreenchange", () => {
 				const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-				if (document.fullscreenElement && isMobile) {{
+				if (document.fullscreenElement && isMobile) {
 					document.body.classList.add("mobile-fullscreen");
-				}} else {{
+				} else {
 					document.body.classList.remove("mobile-fullscreen");
-				}}
+				}
 				updateProgress();
-			}});
-		}});
+			});
+		});
 
-		function toggleFullScreen() {{
-			if (!document.fullscreenElement) {{
-				document.documentElement.requestFullscreen().catch((err) => {{
+		function toggleFullScreen() {
+			if (!document.fullscreenElement) {
+				document.documentElement.requestFullscreen().catch((err) => {
 					console.error("Error attempting to enable full-screen mode:", err.message);
-				}});
-			}} else {{
-				if (document.exitFullscreen) {{
+				});
+			} else {
+				if (document.exitFullscreen) {
 					document.exitFullscreen();
-				}}
-			}}
-		}}
+				}
+			}
+		}
 
-		function loadChapter(chNum) {{
-			renderChapter(chNum, true);
-		}}
+		function loadChapter(chNum) {
+			fetchAndRenderChapter(chNum, true);
+		}
 
-		function goHome() {{
+		function goHome() {
 			renderHome(true);
 			const drawer = document.getElementById("sideDrawer");
 			drawer.classList.remove("open");
-		}}
+		}
 
-		function renderHome(pushHistory = true) {{
-			if (pushHistory) {{
-				history.pushState({{ chapter: null }}, "", window.location.pathname);
-			}}
+		function renderHome(pushHistory = true) {
+			if (pushHistory) {
+				history.pushState({ chapter: null }, "", window.location.pathname);
+			}
 			document.getElementById("chapter-container").classList.remove("active");
 			document.getElementById("home-view").style.display = "block";
 			window.scrollTo(0, 0);
 			updateProgress();
 			loadProgress();
-		}}
+		}
 
-		function renderChapter(chNum, pushHistory = true) {{
-			const ch = bookData[chNum];
-			if (!ch) return;
+		async function fetchAndRenderChapter(chNum, pushHistory = true) {
+			try {
+				const response = await fetch(`chapters/chapter_${chNum}.json`);
+				if (!response.ok) throw new Error("Chapter file missing");
+				const ch = await response.json();
 
-			if (pushHistory) {{
-				history.pushState({{ chapter: chNum }}, "", `#chapter-${{chNum}}`);
-			}}
+				if (pushHistory) {
+					history.pushState({ chapter: chNum }, "", `#chapter-${chNum}`);
+				}
 
-			const prevLink = ch.prev !== null ? `onclick="loadChapter(${{ch.prev}})"` : `class="btn-link disabled"`;
-			const nextLink = ch.next !== null ? `onclick="loadChapter(${{ch.next}})"` : `class="btn-link disabled"`;
-			const prevLabel = ch.prev !== null ? `Ch. ${{ch.prev}}` : "Ch. —";
-			const nextLabel = ch.next !== null ? `Ch. ${{ch.next}}` : "Ch. —";
+				const prevLink = ch.prev !== null ? `onclick="loadChapter(${ch.prev})"` : `class="btn-link disabled"`;
+				const nextLink = ch.next !== null ? `onclick="loadChapter(${ch.next})"` : `class="btn-link disabled"`;
+				const prevLabel = ch.prev !== null ? `Ch. ${ch.prev}` : "Ch. —";
+				const nextLabel = ch.next !== null ? `Ch. ${ch.next}` : "Ch. —";
 
-			const drawerPrevBtn = document.getElementById("drawerPrev");
-			const drawerNextBtn = document.getElementById("drawerNext");
+				const drawerPrevBtn = document.getElementById("drawerPrev");
+				const drawerNextBtn = document.getElementById("drawerNext");
 
-			if (ch.prev !== null) {{
-				drawerPrevBtn.setAttribute("onclick", `loadChapter(${{ch.prev}}); document.getElementById("sideDrawer").classList.remove("open");`);
-				drawerPrevBtn.classList.remove("disabled");
-			}} else {{
-				drawerPrevBtn.removeAttribute("onclick");
-				drawerPrevBtn.classList.add("disabled");
-			}}
+				if (ch.prev !== null) {
+					drawerPrevBtn.setAttribute("onclick", `loadChapter(${ch.prev}); document.getElementById("sideDrawer").classList.remove("open");`);
+					drawerPrevBtn.classList.remove("disabled");
+				} else {
+					drawerPrevBtn.removeAttribute("onclick");
+					drawerPrevBtn.classList.add("disabled");
+				}
 
-			if (ch.next !== null) {{
-				drawerNextBtn.setAttribute("onclick", `loadChapter(${{ch.next}}); document.getElementById("sideDrawer").classList.remove("open");`);
-				drawerNextBtn.classList.remove("disabled");
-			}} else {{
-				drawerNextBtn.removeAttribute("onclick");
-				drawerNextBtn.classList.add("disabled");
-			}}
+				if (ch.next !== null) {
+					drawerNextBtn.setAttribute("onclick", `loadChapter(${ch.next}); document.getElementById("sideDrawer").classList.remove("open");`);
+					drawerNextBtn.classList.remove("disabled");
+				} else {
+					drawerNextBtn.removeAttribute("onclick");
+					drawerNextBtn.classList.add("disabled");
+				}
 
-			let paragraphsHtml = "";
-			ch.paragraphs.forEach(p => {{
-				paragraphsHtml += `<p>${{p}}</p>`;
-			}});
+				let paragraphsHtml = "";
+				ch.paragraphs.forEach(p => {
+					paragraphsHtml += `<p>${p}</p>`;
+				});
 
-			const toolbarHtml = `
-				<div class="toolbar">
-					<div class="toolbar-group">
-						<a class="btn-link" onclick="goHome()">Home</a>
+				const toolbarHtml = `
+					<div class="toolbar">
+						<div class="toolbar-group">
+							<a class="btn-link" onclick="goHome()">Home</a>
+						</div>
+						<div class="toolbar-group">
+							<a class="btn-link ${ch.prev !== null ? '' : 'disabled'}" ${prevLink}>&larr; ${prevLabel}</a>
+							<a class="btn-link ${ch.next !== null ? '' : 'disabled'}" ${nextLink}>${nextLabel} &rarr;</a>
+						</div>
 					</div>
-					<div class="toolbar-group">
-						<a class="btn-link ${{ch.prev !== null ? '' : 'disabled'}}" ${{prevLink}}>&larr; ${{prevLabel}}</a>
-						<a class="btn-link ${{ch.next !== null ? '' : 'disabled'}}" ${{nextLink}}>${{nextLabel}} &rarr;</a>
-					</div>
-				</div>
-			`;
+				`;
 
-			const container = document.getElementById("chapter-container");
-			container.innerHTML = `
-				${{toolbarHtml}}
-				<p class="chapter-num">Chapter ${{ch.num}}</p>
-				<h1 class="chapter-heading">${{ch.title}}</h1>
-				${{paragraphsHtml}}
-				${{toolbarHtml}}
-			`;
+				const container = document.getElementById("chapter-container");
+				container.innerHTML = `
+					${toolbarHtml}
+					<p class="chapter-num">Chapter ${ch.num}</p>
+					<h1 class="chapter-heading">${ch.title}</h1>
+					${paragraphsHtml}
+					${toolbarHtml}
+				`;
 
-			document.getElementById("home-view").style.display = "none";
-			container.classList.add("active");
-			window.scrollTo(0, 0);
+				document.getElementById("home-view").style.display = "none";
+				container.classList.add("active");
+				window.scrollTo(0, 0);
 
-			recordChapterView(ch.num);
-			updateProgress();
-		}}
+				recordChapterView(ch.num);
+				updateProgress();
+			} catch (error) {
+				console.error("Failed to load chapter:", error);
+				renderHome(true);
+			}
+		}
 
-		function getCookie(name) {{
-			const value = `; ${{document.cookie}}`;
-			const parts = value.split(`; ${{name}}=`);
+		function getCookie(name) {
+			const value = `; ${document.cookie}`;
+			const parts = value.split(`; ${name}=`);
 			if (parts.length === 2) return parts.pop().split(";").shift();
 			return "";
-		}}
+		}
 
-		function recordChapterView(chNum) {{
+		function recordChapterView(chNum) {
 			let history = [];
 			const cookieVal = getCookie("reading_history");
-			if (cookieVal) {{
-				try {{
+			if (cookieVal) {
+				try {
 					history = JSON.parse(decodeURIComponent(cookieVal));
-				}} catch(e) {{
+				} catch(e) {
 					history = [];
-				}}
-			}}
+				}
+			}
 			history = history.filter(num => num !== chNum);
 			history.push(chNum);
 			const d = new Date();
 			d.setTime(d.getTime() + (365*24*60*60*1000));
 			document.cookie = "reading_history=" + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
 			loadProgress();
-		}}
+		}
 
-		function loadProgress() {{
-			document.querySelectorAll(".chapter-box").forEach(box => {{
+		function loadProgress() {
+			document.querySelectorAll(".chapter-box").forEach(box => {
 				box.classList.remove("viewed", "latest-viewed");
-			}});
+			});
 
 			const historyCookie = getCookie("reading_history");
-			if (historyCookie) {{
-				try {{
+			if (historyCookie) {
+				try {
 					const history = JSON.parse(decodeURIComponent(historyCookie));
-					if (Array.isArray(history) && history.length > 0) {{
+					if (Array.isArray(history) && history.length > 0) {
 						const latest = history[history.length - 1];
 
-						history.forEach(chNum => {{
-							const box = document.querySelector(`.chapter-box[data-chapter="${{chNum}}"]`);
-							if (box) {{
-								if (chNum === latest) {{
+						history.forEach(chNum => {
+							const box = document.querySelector(`.chapter-box[data-chapter="${chNum}"]`);
+							if (box) {
+								if (chNum === latest) {
 									box.classList.add("latest-viewed");
-								}} else {{
+								} else {
 									box.classList.add("viewed");
-								}}
-							}}
-						}});
-					}}
-				}} catch (e) {{
+								}
+							}
+						});
+					}
+				} catch (e) {
 					console.error("Could not parse reading history cookie", e);
-				}}
-			}}
-		}}
+				}
+			}
+		}
 
-		function resetProgress() {{
-			if (window.confirm("Are you sure you want to reset your reading progress?")) {{
+		function resetProgress() {
+			if (window.confirm("Are you sure you want to reset your reading progress?")) {
 				document.cookie = "reading_history=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
 				loadProgress();
-			}}
-		}}
+			}
+		}
 
-		function updateProgress() {{
+		function updateProgress() {
 			const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
 			const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
 			const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
 			document.getElementById("progressBar").style.width = scrolled + "%";
-		}}
+		}
 	</script>
 </body>
 </html>
