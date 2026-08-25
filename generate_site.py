@@ -17,7 +17,7 @@ def generate_html_site(input_filename, output_dir="docs"):
 		print("The input file is empty.")
 		return
 
-	book_title = lines[0]
+	book_title_data = []
 	chapter_data = []
 	active_chapter_num = None
 	active_chapter_title = None
@@ -25,9 +25,7 @@ def generate_html_site(input_filename, output_dir="docs"):
 
 	chapter_pattern = re.compile(r"^Chapter\s+(\d+)\s*-\s*(.+)$", re.IGNORECASE)
 
-	idx = 1
-	while idx < len(lines):
-		line = lines[idx]
+	for line in lines:
 		match = chapter_pattern.match(line)
 		if match:
 			if active_chapter_num is not None:
@@ -40,9 +38,10 @@ def generate_html_site(input_filename, output_dir="docs"):
 			active_chapter_num = int(match.group(1))
 			active_chapter_title = match.group(2)
 		else:
-			if active_chapter_num is not None:
+			if active_chapter_num is None:
+				book_title_data.append(line)
+			else:
 				active_paragraphs.append(line)
-		idx += 1
 
 	if active_chapter_num is not None:
 		chapter_data.append({
@@ -51,10 +50,15 @@ def generate_html_site(input_filename, output_dir="docs"):
 			"paragraphs": active_paragraphs
 		})
 
-	if not chapter_data:
-		print("No chapters found in the specified format.")
+	if not book_title_data:
+		print("No title found.")
 		return
 
+	if not chapter_data:
+		print("No chapters found.")
+		return
+
+	book_title = book_title_data[0]
 	total_chapters = len(chapter_data)
 
 	for index, ch in enumerate(chapter_data):
@@ -204,6 +208,14 @@ body.mobile-fullscreen .main-wrapper {
 	text-align: center;
 	font-size: 2.5rem;
 	margin-top: 20px;
+}
+
+.book-subtitle {
+	font-family: var(--font-serif);
+	color: var(--text-primary);
+	text-align: center;
+	font-size: 1.8rem;
+	margin-top: 10px;
 }
 
 .chapter-grid {
@@ -461,9 +473,12 @@ p {
 	<div class="main-wrapper">
 		<div id="home-view">
 			<h1 class="book-title">{book_title}</h1>
-
-			<div class="chapter-grid">
 """
+
+	for subtitle in book_title_data[1:]:
+		index_html += f'			<h2 class="book-subtitle">{subtitle}</h2>\n'
+
+	index_html += f'			<div class="chapter-grid">\n'
 
 	for ch in chapter_data:
 		index_html += f'                <a onclick="loadChapter({ch["num"]})" class="chapter-box" data-chapter="{ch["num"]}">Ch. {ch["num"]}</a>\n'
