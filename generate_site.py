@@ -132,6 +132,23 @@ body {
 	overflow-x: hidden;
 }
 
+#fade-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: var(--bg-primary);
+	opacity: 0;
+	transition: opacity 0.15s ease-in-out;
+	pointer-events: none;
+	z-index: 9999;
+}
+
+#fade-overlay.active {
+	opacity: 1;
+}
+
 .letterbox-top, .letterbox-bottom {
 	display: none;
 	position: fixed;
@@ -416,6 +433,8 @@ p {
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
 </head>
 <body>
+	<div id="fade-overlay" class="active"></div>
+
 	<div class="letterbox-top"></div>
 	<div class="letterbox-bottom"></div>
 	<div class="progress-bar" id="progressBar"></div>
@@ -429,7 +448,7 @@ p {
 		</button>
 		<button class="drawer-btn" id="drawerPrev" title="Prev Chapter">&#9664;</button>
 		<button class="drawer-btn" id="drawerNext" title="Next Chapter">&#9654;</button>
-		<button class="drawer-btn" onclick="toggleFullScreen()" title="Full Screen">
+		<button class="drawer-btn" onclick="toggleFullScreenWithFade()" title="Full Screen">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M8 3H5a2 2 0 0 0-2 2v3" />
 				<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
@@ -477,8 +496,12 @@ p {
 			if (hash.startsWith("#chapter-")) {
 				const chNum = parseInt(hash.replace("#chapter-", ""));
 				if (!isNaN(chNum)) {
-					fetchAndRenderChapter(chNum, false);
+					fetchAndRenderChapter(chNum, false).then(() => {
+						document.getElementById("fade-overlay").classList.remove("active");
+					});
 				}
+			} else {
+				document.getElementById("fade-overlay").classList.remove("active");
 			}
 
 			window.addEventListener("scroll", () => {
@@ -509,6 +532,22 @@ p {
 				updateProgress();
 			});
 		});
+
+		function toggleFullScreenWithFade() {
+			const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+			if (isMobile) {
+				const overlay = document.getElementById("fade-overlay");
+				overlay.classList.add("active");
+				setTimeout(() => {
+					toggleFullScreen();
+					setTimeout(() => {
+						overlay.classList.remove("active");
+					}, 150);
+				}, 150)
+			} else {
+				toggleFullScreen();
+			}
+		}
 
 		function toggleFullScreen() {
 			if (!document.fullscreenElement) {
