@@ -474,14 +474,14 @@ p {
 	<div class="progress-bar" id="progressBar"></div>
 
 	<div class="drawer" id="sideDrawer" onclick="event.stopPropagation()">
-		<button class="drawer-btn" onclick="goHome()" title="Go Home">
+		<button class="drawer-btn" onclick="renderHome()" title="Go Home">
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
 				<polyline points="9 22 9 12 15 12 15 22"/>
 			</svg>
 		</button>
-		<button class="drawer-btn" id="drawerPrev" title="Prev Chapter">&#9664;</button>
-		<button class="drawer-btn" id="drawerNext" title="Next Chapter">&#9654;</button>
+		<button class="drawer-btn disabled" id="drawerPrev" title="Prev Chapter">&#9664;</button>
+		<button class="drawer-btn disabled" id="drawerNext" title="Next Chapter">&#9654;</button>
 		<button class="drawer-btn" onclick="toggleFullScreenWithFade()" title="Full Screen">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M8 3H5a2 2 0 0 0-2 2v3" />
@@ -602,21 +602,27 @@ p {
 			fetchAndRenderChapter(chNum, true);
 		}
 
-		function goHome() {
-			renderHome(true);
-			const drawer = document.getElementById("sideDrawer");
-			drawer.classList.remove("open");
-		}
-
 		function renderHome(pushHistory = true) {
 			if (pushHistory) {
 				history.pushState({ chapter: null }, "", window.location.pathname);
 			}
+
+			const drawerPrevBtn = document.getElementById("drawerPrev");
+			const drawerNextBtn = document.getElementById("drawerNext");
+
+			drawerPrevBtn.removeAttribute("onclick");
+			drawerPrevBtn.classList.add("disabled");
+			drawerNextBtn.removeAttribute("onclick");
+			drawerNextBtn.classList.add("disabled");
+
 			document.getElementById("chapter-container").classList.remove("active");
 			document.getElementById("home-view").style.display = "block";
 			window.scrollTo(0, 0);
 			updateProgress();
 			loadProgress();
+
+			const drawer = document.getElementById("sideDrawer");
+			drawer.classList.remove("open");
 		}
 
 		async function fetchAndRenderChapter(chNum, pushHistory = true) {
@@ -661,7 +667,7 @@ p {
 				const toolbarHtml = `
 					<div class="toolbar">
 						<div class="toolbar-group">
-							<a class="btn-link" onclick="goHome()">Home</a>
+							<a class="btn-link" onclick="renderHome()">Home</a>
 						</div>
 						<div class="toolbar-group">
 							<a class="btn-link ${ch.prev !== null ? '' : 'disabled'}" ${prevLink}>&larr; ${prevLabel}</a>
@@ -685,6 +691,9 @@ p {
 
 				recordChapterView(ch.num);
 				updateProgress();
+
+				const drawer = document.getElementById("sideDrawer");
+				drawer.classList.remove("open");
 			} catch (error) {
 				console.error("Failed to load chapter:", error);
 				renderHome(true);
