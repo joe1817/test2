@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import shutil
 
 def generate_html_site(input_filename, output_dir="docs"):
 	if not os.path.exists(output_dir):
@@ -465,6 +466,11 @@ p {
 	<link rel="stylesheet" href="styles/index.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+	<link rel="manifest" href="site.webmanifest">
 </head>
 <body>
 	<div id="fade-overlay" class="active"></div>
@@ -774,6 +780,8 @@ p {
 
 	with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
 		f.write(index_html)
+
+	shutil.copytree("favicons", output_dir, dirs_exist_ok=True)
 
 	with open(os.path.join(output_dir, ".nojekyll"), "a") as f:
 		pass
