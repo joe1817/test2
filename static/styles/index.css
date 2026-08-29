@@ -199,32 +199,6 @@ body.mobile-fullscreen .main-wrapper {
 	background: color-mix(in srgb, var(--accent-bg-strong) 85%, var(--hover-color) 15%);
 }
 
-.reset-container {
-	text-align: center;
-	margin: 40px 0 20px 0;
-}
-
-#reset-progress-btn {
-	color: var(--danger-color);
-	background-color: var(--bg-1);
-	border: 1px solid var(--danger-border);
-	padding: 10px 20px;
-	border-radius: 4px;
-	cursor: pointer;
-	font-size: 0.9rem;
-	transition: background 0.2s, border-color 0.2s;
-}
-
-#reset-progress-btn:hover {
-	background-color: var(--danger-bg);
-	border-color: var(--danger-color);
-}
-
-.github-link {
-	text-align: center;
-	margin-top: 30px;
-}
-
 a {
 	color: var(--accent-color);
 	text-decoration: none;
@@ -339,12 +313,13 @@ p {
 	width: 48px;
 	height: 48px;
 	border-radius: 6px;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
 	text-decoration: none;
 	font-size: 1.1rem;
+	box-sizing: border-box;
 	transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
@@ -358,6 +333,21 @@ p {
 	background-color: var(--disbaled-bg);
 	border-color: var(--border-1);
 	pointer-events: none;
+}
+
+.drawer-btn.danger {
+	color: var(--danger-color);
+	background-color: var(--bg-1);
+	border: 1px solid var(--danger-border);
+}
+
+.drawer-btn.danger:hover {
+	background-color: var(--danger-bg);
+	border-color: var(--danger-color);
+}
+
+.hidden {
+	display: none !important;
 }
 
 @media (min-width: 768px) {

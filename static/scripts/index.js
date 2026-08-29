@@ -87,22 +87,31 @@ function renderHome(pushHistory = true) {
 		history.pushState({ chapter: null }, "", window.location.pathname);
 	}
 
-	const drawerPrevBtn = document.getElementById("drawerPrev");
-	const drawerNextBtn = document.getElementById("drawerNext");
+	const drawer = document.getElementById("sideDrawer");
+	const delay = drawer.classList.contains("open") ? 300 : 0;
+	drawer.classList.remove("open");
 
-	drawerPrevBtn.removeAttribute("onclick");
-	drawerPrevBtn.classList.add("disabled");
-	drawerNextBtn.removeAttribute("onclick");
-	drawerNextBtn.classList.add("disabled");
+	setTimeout(() => {
+		const drawerHomeBtn = document.getElementById("drawerHome");
+		const drawerPrevBtn = document.getElementById("drawerPrev");
+		const drawerNextBtn = document.getElementById("drawerNext");
+		const drawerResetBtn = document.getElementById("drawerReset");
+		const drawerGithubBtn = document.getElementById("drawerGithub");
+
+		drawerPrevBtn.classList.remove("disabled");
+		drawerNextBtn.classList.remove("disabled");
+		drawerHomeBtn.classList.add("hidden");
+		drawerPrevBtn.classList.add("hidden");
+		drawerNextBtn.classList.add("hidden");
+		drawerResetBtn.classList.remove("hidden");
+		drawerGithubBtn.classList.remove("hidden");
+	}, delay);
 
 	document.getElementById("chapter-container").classList.remove("active");
 	document.getElementById("home-view").style.display = "block";
 	window.scrollTo(0, 0);
 	updateProgress();
 	loadProgress();
-
-	const drawer = document.getElementById("sideDrawer");
-	drawer.classList.remove("open");
 }
 
 async function fetchAndRenderChapter(chNum, pushHistory = true) {
@@ -115,34 +124,44 @@ async function fetchAndRenderChapter(chNum, pushHistory = true) {
 			history.pushState({ chapter: chNum }, "", `#chapter-${chNum}`);
 		}
 
+		const drawer = document.getElementById("sideDrawer");
+		const delay = drawer.classList.contains("open") ? 300 : 0;
+		drawer.classList.remove("open");
+
+		setTimeout(() => {
+			const drawerHomeBtn = document.getElementById("drawerHome");
+			const drawerPrevBtn = document.getElementById("drawerPrev");
+			const drawerNextBtn = document.getElementById("drawerNext");
+			const drawerResetBtn = document.getElementById("drawerReset");
+			const drawerGithubBtn = document.getElementById("drawerGithub");
+
+			drawerHomeBtn.classList.remove("hidden");
+			drawerPrevBtn.classList.remove("hidden");
+			drawerNextBtn.classList.remove("hidden");
+			drawerResetBtn.classList.add("hidden");
+			drawerGithubBtn.classList.add("hidden");
+
+			if (ch.prev !== null) {
+				drawerPrevBtn.setAttribute("onclick", `loadChapter(${ch.prev}); document.getElementById("sideDrawer").classList.remove("open");`);
+				drawerPrevBtn.classList.remove("disabled");
+			} else {
+				drawerPrevBtn.removeAttribute("onclick");
+				drawerPrevBtn.classList.add("disabled");
+			}
+
+			if (ch.next !== null) {
+				drawerNextBtn.setAttribute("onclick", `loadChapter(${ch.next}); document.getElementById("sideDrawer").classList.remove("open");`);
+				drawerNextBtn.classList.remove("disabled");
+			} else {
+				drawerNextBtn.removeAttribute("onclick");
+				drawerNextBtn.classList.add("disabled");
+			}
+		}, delay);
+
 		const prevLink = ch.prev !== null ? `onclick="loadChapter(${ch.prev})"` : `class="btn-link disabled"`;
 		const nextLink = ch.next !== null ? `onclick="loadChapter(${ch.next})"` : `class="btn-link disabled"`;
 		const prevLabel = ch.prev !== null ? `Ch. ${ch.prev}` : "Ch. —";
 		const nextLabel = ch.next !== null ? `Ch. ${ch.next}` : "Ch. —";
-
-		const drawerPrevBtn = document.getElementById("drawerPrev");
-		const drawerNextBtn = document.getElementById("drawerNext");
-
-		if (ch.prev !== null) {
-			drawerPrevBtn.setAttribute("onclick", `loadChapter(${ch.prev}); document.getElementById("sideDrawer").classList.remove("open");`);
-			drawerPrevBtn.classList.remove("disabled");
-		} else {
-			drawerPrevBtn.removeAttribute("onclick");
-			drawerPrevBtn.classList.add("disabled");
-		}
-
-		if (ch.next !== null) {
-			drawerNextBtn.setAttribute("onclick", `loadChapter(${ch.next}); document.getElementById("sideDrawer").classList.remove("open");`);
-			drawerNextBtn.classList.remove("disabled");
-		} else {
-			drawerNextBtn.removeAttribute("onclick");
-			drawerNextBtn.classList.add("disabled");
-		}
-
-		let paragraphsHtml = "";
-		ch.paragraphs.forEach(p => {
-			paragraphsHtml += `<p>${p}</p>`;
-		});
 
 		const toolbarHtml = `
 			<div class="toolbar">
@@ -155,6 +174,11 @@ async function fetchAndRenderChapter(chNum, pushHistory = true) {
 				</div>
 			</div>
 		`;
+
+		let paragraphsHtml = "";
+		ch.paragraphs.forEach(p => {
+			paragraphsHtml += `<p>${p}</p>`;
+		});
 
 		const container = document.getElementById("chapter-container");
 		container.innerHTML = `
@@ -171,9 +195,6 @@ async function fetchAndRenderChapter(chNum, pushHistory = true) {
 
 		recordChapterView(ch.num);
 		updateProgress();
-
-		const drawer = document.getElementById("sideDrawer");
-		drawer.classList.remove("open");
 	} catch (error) {
 		console.error("Failed to load chapter:", error);
 		renderHome(true);
