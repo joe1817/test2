@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ebook Reader</title>
+	<link rel="stylesheet" href="styles/index.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+	<link rel="manifest" href="site.webmanifest">
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+	<div id="app">
+		<div id="fade-overlay" :class="{ active: isFadeActive }"></div>
+
+		<div class="letterbox-top"></div>
+		<div class="letterbox-bottom"></div>
+		<div class="progress-bar" id="progressBar" :style="{ width: progressWidth + '%' }"></div>
+
+		<div class="drawer" id="sideDrawer" ref="sideDrawer">
+			<button class="drawer-btn" :class="{ hidden: !currentChapter }" @click="renderHome" title="Go Home">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+					<polyline points="9 22 9 12 15 12 15 22"/>
+				</svg>
+			</button>
+			<button class="drawer-btn" :class="{ hidden: !currentChapter, disabled: !chapterData || chapterData.prev === null }" @click="chapterData && chapterData.prev !== null && loadChapter(chapterData.prev)" title="Prev Chapter">&#9664;</button>
+			<button class="drawer-btn" :class="{ hidden: !currentChapter, disabled: !chapterData || chapterData.next === null }" @click="chapterData && chapterData.next !== null && loadChapter(chapterData.next)" title="Next Chapter">&#9654;</button>
+
+			<button class="drawer-btn" @click="toggleFullScreenWithFade" title="Full Screen">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3" />
+					<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+					<path d="M3 16v3a2 2 0 0 0 2 2h3" />
+					<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+				</svg>
+			</button>
+			<button class="drawer-btn danger" :class="{ hidden: currentChapter }" @click="resetProgress" title="Reset Progress">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+					<path d="M3 3v5h5"/>
+				</svg>
+			</button>
+			<a href="https://github.com/joe1817/test2" class="drawer-btn" :class="{ hidden: currentChapter }" id="drawerGithub" title="Github Repo">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+					<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+				</svg>
+			</a>
+		</div>
+
+		<div class="main-wrapper">
+			<div id="home-view" v-show="!currentChapter">
+				<h1 class="book-title">{{ tocData ? tocData.title : '' }}</h1>
+				<h2 class="book-subtitle" v-for="(sub, sIndex) in (tocData ? tocData.subtitles : [])" :key="sIndex">{{ sub }}</h2>
+				<div class="chapter-grid">
+					<a v-for="ch in (tocData ? tocData.chapters : [])" :key="ch.num" @click="loadChapter(ch.num)" class="chapter-box" :data-chapter="ch.num">Ch. {{ ch.num }}</a>
+				</div>
+			</div>
+
+			<div id="chapter-container" class="chapter-view" :class="{ active: currentChapter }">
+				<template v-if="chapterData">
+					<div class="toolbar">
+						<div class="toolbar-group">
+							<a class="btn-link" @click="renderHome">Home</a>
+						</div>
+						<div class="toolbar-group">
+							<a class="btn-link" :class="{ disabled: chapterData.prev === null }" @click="chapterData.prev !== null && loadChapter(chapterData.prev)">&larr; Ch. {{ chapterData.prev !== null ? chapterData.prev : '—' }}</a>
+							<a class="btn-link" :class="{ disabled: chapterData.next === null }" @click="chapterData.next !== null && loadChapter(chapterData.next)">Ch. {{ chapterData.next !== null ? chapterData.next : '—' }} &rarr;</a>
+						</div>
+					</div>
+
+					<p class="chapter-num">Chapter {{ chapterData.num }}</p>
+					<h1 class="chapter-heading">{{ chapterData.title }}</h1>
+					<p v-for="(p, index) in chapterData.paragraphs" :key="index">{{ p }}</p>
+
+					<div class="toolbar">
+						<div class="toolbar-group">
+							<a class="btn-link" @click="renderHome">Home</a>
+						</div>
+						<div class="toolbar-group">
+							<a class="btn-link" :class="{ disabled: chapterData.prev === null }" @click="chapterData.prev !== null && loadChapter(chapterData.prev)">&larr; Ch. {{ chapterData.prev !== null ? chapterData.prev : '—' }}</a>
+							<a class="btn-link" :class="{ disabled: chapterData.next === null }" @click="chapterData.next !== null && loadChapter(chapterData.next)">Ch. {{ chapterData.next !== null ? chapterData.next : '—' }} &rarr;</a>
+						</div>
+					</div>
+				</template>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const { createApp } = Vue;
+
+		createApp({
+			data() {
+				return {
+					tocData: null,
+					currentChapter: null,
+					chapterData: null,
+					isFadeActive: true,
+					progressWidth: 0
+				};
+			},
+			mounted() {
+				this.fetchToc().then(() => {
+					this.loadProgress();
+
+					window.addEventListener("popstate", (event) => {
+						if (event.state && event.state.chapter) {
+							this.fetchAndRenderChapter(event.state.chapter, false);
+						} else {
+							this.renderHome(false);
+						}
+					});
+
+					const hash = window.location.hash;
+					if (hash.startsWith("#chapter-")) {
+						const chNum = parseInt(hash.replace("#chapter-", ""));
+						if (!isNaN(chNum)) {
+							this.fetchAndRenderChapter(chNum, false).then(() => {
+								this.isFadeActive = false;
+							});
+						} else {
+							this.isFadeActive = false;
+						}
+					} else {
+						this.isFadeActive = false;
+					}
+				});
+
+				window.addEventListener("scroll", this.updateProgress);
+
+				document.addEventListener("scroll", () => {
+					const drawer = this.$refs.sideDrawer;
+					if (drawer) drawer.classList.remove("open");
+				});
+
+				document.addEventListener("click", this.toggleDrawer);
+
+				document.addEventListener("fullscreenchange", () => {
+					const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+					if (document.fullscreenElement && isMobile) {
+						document.body.classList.add("mobile-fullscreen");
+					} else {
+						document.body.classList.remove("mobile-fullscreen");
+					}
+					this.updateProgress();
+				});
+			},
+			methods: {
+				async fetchToc() {
+					try {
+						const response = await fetch("toc.json");
+						if (!response.ok) throw new Error("TOC file missing");
+						this.tocData = await response.json();
+						if (this.tocData && this.tocData.title) {
+							document.title = this.tocData.title;
+						}
+					} catch (error) {
+						console.error("Failed to fetch table of contents:", error);
+					}
+				},
+				getCookie(name) {
+					const value = "; " + document.cookie;
+					const parts = value.split("; " + name + "=");
+					if (parts.length === 2) return parts.pop().split(";").shift();
+					return "";
+				},
+				loadProgress() {
+					document.querySelectorAll(".chapter-box").forEach(box => {
+						box.classList.remove("viewed", "latest-viewed");
+					});
+
+					const historyCookie = this.getCookie("reading_history");
+					if (historyCookie) {
+						try {
+							const history = JSON.parse(decodeURIComponent(historyCookie));
+							if (Array.isArray(history) && history.length > 0) {
+								const latest = history[history.length - 1];
+								history.forEach(chNum => {
+									const box = document.querySelector(`.chapter-box[data-chapter="${chNum}"]`);
+									if (box) {
+										if (chNum === latest) {
+											box.classList.add("latest-viewed");
+										} else {
+											box.classList.add("viewed");
+										}
+									}
+								});
+							}
+						} catch (e) {
+							console.error("Could not parse reading history cookie", e);
+						}
+					}
+				},
+				recordChapterView(chNum) {
+					let history = [];
+					const cookieVal = this.getCookie("reading_history");
+					if (cookieVal) {
+						try {
+							history = JSON.parse(decodeURIComponent(cookieVal));
+						} catch(e) {
+							history = [];
+						}
+					}
+					history = history.filter(num => num !== chNum);
+					history.push(chNum);
+					const d = new Date();
+					d.setTime(d.getTime() + (365*24*60*60*1000));
+					document.cookie = "reading_history=" + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
+					this.loadProgress();
+				},
+				updateProgress() {
+					const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+					const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+					this.progressWidth = height > 0 ? (winScroll / height) * 100 : 0;
+				},
+				toggleDrawer(event) {
+					console.log("toggleDrawer");
+					const drawer = this.$refs.sideDrawer;
+					if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".drawer")) {
+						drawer.classList.remove("open");
+					} else {
+						drawer.classList.toggle("open");
+					}
+				},
+				toggleFullScreen() {
+					if (!document.fullscreenElement) {
+						document.documentElement.requestFullscreen().catch((err) => {
+							console.error("Error attempting to enable full-screen mode:", err.message);
+						});
+					} else {
+						if (document.exitFullscreen) {
+							document.exitFullscreen();
+						}
+					}
+				},
+				toggleFullScreenWithFade() {
+					const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+					if (isMobile) {
+						this.isFadeActive = true;
+						setTimeout(() => {
+							this.toggleFullScreen();
+							setTimeout(() => {
+								this.isFadeActive = false;
+							}, 150);
+						}, 150);
+					} else {
+						this.toggleFullScreen();
+					}
+				},
+				async fetchAndRenderChapter(chNum, pushHistory = true) {
+					try {
+						const response = await fetch(`chapters/chapter_${chNum}.json`);
+						if (!response.ok) throw new Error("Chapter file missing");
+						const ch = await response.json();
+
+						if (pushHistory) {
+							history.pushState({ chapter: chNum }, "", `#chapter-${chNum}`);
+						}
+
+						const drawer = this.$refs.sideDrawer;
+						const delay = drawer && drawer.classList.contains("open") ? 300 : 0;
+						if (drawer) drawer.classList.remove("open");
+
+						setTimeout(() => {
+							this.chapterData = ch;
+							this.currentChapter = chNum;
+						}, delay);
+
+						this.$nextTick(() => {
+							window.scrollTo(0, 0);
+							this.recordChapterView(ch.num);
+							this.updateProgress();
+						});
+					} catch (error) {
+						console.error("Failed to load chapter:", error);
+						this.renderHome(true);
+					}
+				},
+				loadChapter(chNum) {
+					this.fetchAndRenderChapter(chNum, true);
+				},
+				renderHome(pushHistory = true) {
+					if (pushHistory) {
+						history.pushState({ chapter: null }, "", window.location.pathname);
+					}
+
+					const drawer = this.$refs.sideDrawer;
+					const delay = drawer && drawer.classList.contains("open") ? 300 : 0;
+					if (drawer) drawer.classList.remove("open");
+
+					setTimeout(() => {
+						this.currentChapter = null;
+						this.chapterData = null;
+					}, delay);
+
+					window.scrollTo(0, 0);
+					this.updateProgress();
+					this.loadProgress();
+				},
+				resetProgress() {
+					if (window.confirm("Are you sure you want to reset your reading progress?")) {
+						document.cookie = "reading_history=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+						this.loadProgress();
+					}
+				}
+			}
+		}).mount("#app");
+	</script>
+</body>
+</html>
