@@ -109,7 +109,7 @@ button {
 	top: 0;
 	left: 0;
 	height: 3px;
-	background-color: var(--accent-color-strong);
+	background: linear-gradient(to right, var(--accent-color-strong), color-mix(in srgb, var(--accent-color-strong) 90%, var(--hover-color) 10%));
 	width: 0%;
 	z-index: 101;
 	transform-origin: left;
