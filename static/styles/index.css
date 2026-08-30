@@ -77,6 +77,7 @@ body {
 	opacity: 1;
 }
 
+.chapter-box,
 .btn-link,
 button {
 	user-select: none;
@@ -131,7 +132,7 @@ body.mobile-fullscreen .progress-bar {
 }
 
 body.mobile-fullscreen .main-wrapper {
-	padding: calc(env(safe-area-inset-top, 0px) + 40px) 20px calc(env(safe-area-inset-bottom, 0px) + 40px) 20px;
+	padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px calc(env(safe-area-inset-bottom, 0px) + 60px) 20px;
 }
 
 .book-title {
