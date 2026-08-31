@@ -36,10 +36,8 @@
 * { box-sizing: border-box; }
 
 html {
-	color: var(--color);
-	background-color: var(--bg-page);
-	font-family: var(--font-sans);
 	height: 100vh;
+	font-size: 16px;
 	overflow-y: auto;
 	scrollbar-gutter: stable;
 	-ms-overflow-style: none;
@@ -54,10 +52,12 @@ body {
 	color: var(--color);
 	background-color: var(--bg-page);
 	font-family: var(--font-sans);
+	line-height: 1.5;
 	margin: 0;
 	padding: 0;
 	min-height: 100vh;
 	overflow-x: hidden;
+	overflow-wrap: break-word;
 }
 
 #fade-overlay {
@@ -77,8 +77,8 @@ body {
 	opacity: 1;
 }
 
-.chapter-box,
-.btn-link,
+.grid-item,
+.btn,
 button {
 	user-select: none;
 	-webkit-user-select: none;
@@ -135,7 +135,7 @@ body.mobile-fullscreen .main-wrapper {
 	padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px calc(env(safe-area-inset-bottom, 0px) + 60px) 20px;
 }
 
-.book-title {
+.page-title {
 	color: var(--color-strong);
 	font-family: var(--font-serif);
 	text-align: center;
@@ -143,7 +143,7 @@ body.mobile-fullscreen .main-wrapper {
 	margin-top: 20px;
 }
 
-.book-subtitle {
+.page-subtitle {
 	color: var(--color-strong);
 	font-family: var(--font-serif);
 	text-align: center;
@@ -151,59 +151,102 @@ body.mobile-fullscreen .main-wrapper {
 	margin-top: 10px;
 }
 
-.chapter-grid {
+.title-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
 	gap: 12px;
 	padding: 20px 0;
 }
 
-.chapter-box {
+a,
+router-link,
+.text-link {
 	color: var(--accent-color);
-	background: var(--bg-1);
-	border: 1px solid var(--border-1);
-	padding: 15px 10px;
-	border-radius: 5px;
-	text-align: center;
 	text-decoration: none;
+	font-size: 1.5rem;
 	font-weight: bold;
-	font-size: 1rem;
-	transition: background 0.2s, border-color 0.2s, color 0.2s;
 	cursor: pointer;
 }
 
-.chapter-box:hover {
-	color: color-mix(in srgb, var(--accent-color) 90%, var(--hover-color) 10%);
-	background: color-mix(in srgb, var(--bg-1) 90%, var(--hover-color) 10%);
+.btn {
+	color: var(--accent-color);
+	background-color: var(--bg-1);
+	border: 1px solid var(--border-1);
+	padding: 10px 14px;
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	font-size: 1rem;
+	box-sizing: border-box;
+	transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.chapter-box.viewed {
+.btn:hover {
+	color: color-mix(in srgb, var(--accent-color) 90%, var(--hover-color) 10%);
+	background: color-mix(in srgb, var(--bg-1) 90%, var(--hover-color) 10%);
+	border: 1px solid color-mix(in srgb, var(--border-1) 90%, var(--hover-color) 10%);
+}
+
+.btn.disabled {
+	color: var(--disabled-color);
+	background-color: var(--disbaled-bg);
+	border-color: var(--disabled-border);
+	pointer-events: none;
+}
+
+.icon-btn {
+	width: 48px;
+	height: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.btn.disabled {
+	color: var(--disabled-color);
+	background-color: var(--disbaled-bg);
+	border-color: var(--border-1);
+	pointer-events: none;
+}
+
+.btn.danger {
+	color: var(--danger-color);
+	background-color: var(--bg-1);
+	border: 1px solid var(--danger-border);
+}
+
+.btn.danger:hover {
+	background-color: var(--danger-bg);
+	border-color: var(--danger-color);
+}
+
+.btn.grid-item {
+	padding: 15px 10px;
+	font-weight: bold;
+}
+
+.btn.grid-item.viewed {
 	color: var(--accent-color);
 	background: var(--accent-bg);
 	border-color: var(--accent-border);
 }
 
-.chapter-box.viewed:hover {
+.btn.grid-item.viewed:hover {
 	color: color-mix(in srgb, var(--accent-color) 90%, var(--hover-color) 10%);
 	background: color-mix(in srgb, var(--accent-bg) 90%, var(--hover-color) 10%);
 }
 
-.chapter-box.latest-viewed {
+.btn.grid-item.latest-viewed {
 	color: var(--color-strong);
 	background: var(--accent-bg-strong);
 	border-color: var(--accent-border-strong);
 	box-shadow: 0 0 8px var(--accent-shadow-strong);
 }
 
-.chapter-box.latest-viewed:hover {
+.btn.grid-item.latest-viewed:hover {
 	color: color-mix(in srgb, var(--color-strong) 85%, var(--hover-color) 15%);
 	background: color-mix(in srgb, var(--accent-bg-strong) 85%, var(--hover-color) 15%);
-}
-
-a {
-	color: var(--accent-color);
-	text-decoration: none;
-	cursor: pointer;
 }
 
 .chapter-view {
@@ -247,11 +290,11 @@ p {
 	align-items: center;
 }
 
-.toolbar:first-of-type {
+.toolbar.top-toolbar {
 	margin-bottom: 30px;
 }
 
-.toolbar:not(:first-of-type) {
+.toolbar.bottom-toolbar {
 	margin-top: 80px;
 }
 
@@ -259,29 +302,6 @@ p {
 	display: flex;
 	gap: 12px;
 	align-items: center;
-}
-
-.btn-link {
-	color: var(--accent-color);
-	background-color: var(--bg-1);
-	border: 1px solid var(--border-1);
-	padding: 10px 14px;
-	border-radius: 6px;
-	cursor: pointer;
-	text-decoration: none;
-	font-size: 1rem;
-}
-
-.btn-link:hover {
-	background: color-mix(in srgb, var(--bg-1) 90%, var(--hover-color) 10%);
-	border: 1px solid color-mix(in srgb, var(--border-1) 90%, var(--hover-color) 10%);
-}
-
-.btn-link.disabled {
-	color: var(--disabled-color);
-	background-color: var(--disbaled-bg);
-	border-color: var(--disabled-border);
-	pointer-events: none;
 }
 
 .drawer {
@@ -307,56 +327,7 @@ p {
 	right: 0;
 }
 
-.drawer-btn {
-	color: var(--accent-color);
-	background-color: var(--bg-1);
-	border: 1px solid var(--border-1);
-	width: 48px;
-	height: 48px;
-	border-radius: 6px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	text-decoration: none;
-	font-size: 1.1rem;
-	box-sizing: border-box;
-	transition: background 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.drawer-btn:hover {
-	background: color-mix(in srgb, var(--bg-1) 90%, var(--hover-color) 10%);
-	border: 1px solid color-mix(in srgb, var(--accent-border) 90%, var(--hover-color) 10%);
-}
-
-.drawer-btn.disabled {
-	color: var(--disabled-color);
-	background-color: var(--disbaled-bg);
-	border-color: var(--border-1);
-	pointer-events: none;
-}
-
-.drawer-btn.danger {
-	color: var(--danger-color);
-	background-color: var(--bg-1);
-	border: 1px solid var(--danger-border);
-}
-
-.drawer-btn.danger:hover {
-	background-color: var(--danger-bg);
-	border-color: var(--danger-color);
-}
-
 .hidden {
 	display: none !important;
 }
 
-@media (min-width: 768px) {
-	.toolbar {
-		padding: 16px 24px;
-	}
-	.btn-link {
-		padding: 12px 18px;
-		font-size: 1.05rem;
-	}
-}
