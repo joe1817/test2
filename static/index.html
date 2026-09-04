@@ -1,109 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="hide-scrollbar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;">
-    <title>Ebook Reader</title>
-    <link rel="stylesheet" href="/test2/styles/index.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-    <link rel="icon" type="image/x-icon" href="/test2/favicon.ico">
-    <link rel="icon" type="image/png" sizes="16x16" href="/test2/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/test2/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/test2/apple-touch-icon.png">
-    <link rel="manifest" href="/test2/site.webmanifest">
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;">
+	<title>Ebook Reader</title>
+	<link rel="stylesheet" href="/test2/styles/index.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+	<link rel="icon" type="image/x-icon" href="/test2/favicon.ico">
+	<link rel="icon" type="image/png" sizes="16x16" href="/test2/favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/test2/favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="/test2/apple-touch-icon.png">
+	<link rel="manifest" href="/test2/site.webmanifest">
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	<script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div id="fade-overlay" :class="{ active: isFadeActive }"></div>
+	<div id="app">
+		<div id="fade-overlay" :class="{ active: isFadeActive }"></div>
 
-        <div class="letterbox-top"></div>
-        <div class="letterbox-bottom"></div>
-        <div class="progress-bar" id="progressBar" :style="{ width: progressWidth + '%' }"></div>
+		<div class="letterbox-top"></div>
+		<div class="letterbox-bottom"></div>
+		<div class="progress-bar" id="progressBar" :style="{ width: progressWidth + '%' }"></div>
 
-        <div class="main-wrapper">
-            <router-view></router-view>
-        </div>
-    </div>
+		<div class="main-wrapper">
+			<router-view></router-view>
+		</div>
+	</div>
 
-    <template id="home-view-template">
-        <div id="home-view">
-            <h1 class="page-title">Library</h1>
-            <div class="title-list">
-                <router-link v-for="book in books" :key="book.slug" :to="'/' + book.slug">
-                    {{ book.title }}
-                </router-link>
-            </div>
-			<div class="toolbar bottom-toolbar">
-				<div class="toolbar-group">
-					<a href="https://github.com/joe1817/test2" class="btn icon-btn" id="drawerGithub" title="Github Repo" target="_blank">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-							<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-						</svg>
-					</a>
+	<template id="home-view-template">
+		<div id="home-view">
+
+			<div class="drawer" id="drawer-home" ref="drawer">
+				<a href="https://github.com/joe1817/test2" class="btn icon-btn" id="drawerGithub" title="Github Repo" target="_blank">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+						<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+					</svg>
+				</a>
+				<div class="drawer-divider"></div>
+				<div class="btn icon-btn" @click="$root.toggleFullScreenWithFade" title="Full Screen">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M8 3H5a2 2 0 0 0-2 2v3" />
+						<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+						<path d="M3 16v3a2 2 0 0 0 2 2h3" />
+						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+					</svg>
 				</div>
 			</div>
-        </div>
-    </template>
 
-    <template id="toc-view-template">
-        <div id="toc-view">
-			<div class="toolbar top-toolbar">
+			<h1 class="page-title">Library</h1>
+			<div class="title-list">
+				<div v-for="book in books" :key="book.slug" class="link-wrapper">
+					<router-link :to="'/' + book.slug" class="text-link">
+						{{ book.title }}
+					</router-link>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<template id="toc-view-template">
+		<div id="toc-view">
+
+			<div class="drawer" id="drawer-toc" ref="drawer">
+				<div class="btn icon-btn" @click="goHome" title="Go Home">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+						<polyline points="9 22 9 12 15 12 15 22"/>
+					</svg>
+				</div>
+				<div class="drawer-divider"></div>
+				<div class="btn icon-btn" @click="$root.toggleFullScreenWithFade" title="Full Screen">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M8 3H5a2 2 0 0 0-2 2v3" />
+						<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+						<path d="M3 16v3a2 2 0 0 0 2 2h3" />
+						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+					</svg>
+				</div>
+				<div class="btn" @click="changeView" title="Change View">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						  <rect x="3" y="3" width="7" height="7" rx="0.5" />
+						  <rect x="3" y="14" width="7" height="7" rx="0.5" />
+						  <rect x="14" y="3" width="7" height="18" rx="0.5" />
+					</svg>
+				</div>
+				<div class="btn icon-btn danger" @click="resetProgress" title="Reset Progress">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<path d="M3 3v5h5"/>
+					</svg>
+				</div>
+			</div>
+
+			<div class="toolbar">
 				<div class="toolbar-group">
 					<router-link class="btn" :to="'/'">Library</router-link>
 				</div>
-				<div class="toolbar-group">
-                    <div class="btn icon-btn danger" @click="resetProgress" title="Reset Progress">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                            <path d="M3 3v5h5"/>
-                        </svg>
-                    </div>
-                    <div class="btn" @click="changeView" title="Change View">
-                        Change View
-                    </div>
+			</div>
+
+			<template v-if="tocData">
+				<h1 class="page-title">{{ tocData.title }}</h1>
+				<h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
+
+				<div class="pagination-controls" v-if="totalPages > 1" style="margin-bottom: 32px;">
+					<div class="toolbar-group">
+						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">&larr; Prev</router-link>
+						<span>Page {{ currentPage }} of {{ totalPages }}</span>
+						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next &rarr;</router-link>
+					</div>
+					<div class="toolbar-group chapter-range">
+						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
+					</div>
+				</div>
+
+				<template v-if="view === 'grid'">
+					<div class="title-grid">
+						<router-link v-for="ch in paginatedChapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="btn list-item" :data-chapter="ch.num">
+							<span class="chapterNum">{{ ch.num }}</span>
+						</router-link>
+					</div>
+				</template>
+				<template v-else>
+					<div class="title-list">
+						<div v-for="ch in paginatedChapters" :key="ch.num" class="link-wrapper">
+							<router-link :to="'/' + tocData.slug + '/' + ch.num" class="text-link list-item" :data-chapter="ch.num">
+								<span class="chapterNum">{{ ch.num }}</span><span class="chapterTitle">{{ ch.title }}</span>
+							</router-link>
+						</div>
+					</div>
+				</template>
+
+				<div class="pagination-controls" v-if="totalPages > 1" style="margin-top: 32px;">
+					<div class="toolbar-group">
+						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">&larr; Prev</router-link>
+						<span>Page {{ currentPage }} of {{ totalPages }}</span>
+						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next &rarr;</router-link>
+					</div>
+					<div class="toolbar-group chapter-range">
+						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
+					</div>
+				</div>
+			</template>
+		</div>
+	</template>
+
+	<template id="chapter-view-template">
+		<div id="chapter-container" class="chapter-view active">
+
+			<div class="drawer" id="drawer-chapter" ref="drawer">
+				<div class="btn icon-btn" @click="goToToc" title="Go to TOC">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+						<polyline points="9 22 9 12 15 12 15 22"/>
+					</svg>
+				</div>
+				<div class="btn icon-btn" :class="{ disabled: !chapterData || chapterData.prev === null }" @click="chapterData && chapterData.prev !== null && navigateChapter(chapterData.prev)" title="Prev Chapter">&#9664;</div>
+				<div class="btn icon-btn" :class="{ disabled: !chapterData || chapterData.next === null }" @click="chapterData && chapterData.next !== null && navigateChapter(chapterData.next)" title="Next Chapter">&#9654;</div>
+				<div class="drawer-divider"></div>
+				<div class="btn icon-btn" @click="$root.toggleFullScreenWithFade" title="Full Screen">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M8 3H5a2 2 0 0 0-2 2v3" />
+						<path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+						<path d="M3 16v3a2 2 0 0 0 2 2h3" />
+						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+					</svg>
 				</div>
 			</div>
 
-            <template v-if="tocData">
-                <h1 class="page-title">{{ tocData.title }}</h1>
-                <h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
-                <div :class="view === 'grid' ? 'title-grid' : 'title-list'">
-                    <router-link v-for="ch in tocData.chapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" :class="view === 'grid' ? 'btn grid-item' : 'text-link'" :data-chapter="ch.num">
-                        {{ view === 'grid' ? 'Ch. ' + ch.num : 'Ch. ' + ch.num + ' - ' + ch.title }}
-                    </router-link>
-                </div>
-            </template>
-        </div>
-    </template>
-
-    <template id="chapter-view-template">
-        <div id="chapter-container" class="chapter-view active">
-            <div class="drawer" id="sideDrawer" ref="sideDrawer">
-                <div class="btn icon-btn" @click="goToToc" title="Go to TOC">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                </div>
-                <div class="btn icon-btn" :class="{ disabled: !chapterData || chapterData.prev === null }" @click="chapterData && chapterData.prev !== null && navigateChapter(chapterData.prev)" title="Prev Chapter">&#9664;</div>
-                <div class="btn icon-btn" :class="{ disabled: !chapterData || chapterData.next === null }" @click="chapterData && chapterData.next !== null && navigateChapter(chapterData.next)" title="Next Chapter">&#9654;</div>
-
-                <div class="btn icon-btn" @click="$root.toggleFullScreenWithFade" title="Full Screen">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-                    </svg>
-                </div>
-            </div>
-
-            <template v-if="chapterData">
-				<div class="toolbar top-toolbar">
+			<template v-if="chapterData">
+				<div class="toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug">TOC</router-link>
 					</div>
@@ -117,93 +184,164 @@
 					</div>
 				</div>
 
-                <p class="chapter-num">Chapter {{ chapterData.num }}</p>
-                <h1 class="chapter-heading">{{ chapterData.title }}</h1>
-                <p v-for="(p, index) in chapterData.paragraphs" :key="index">{{ p }}</p>
+				<p class="chapter-num">Chapter {{ chapterData.num }}</p>
+				<h1 class="chapter-heading">{{ chapterData.title }}</h1>
+				<p v-for="(p, index) in chapterData.paragraphs" :key="index">{{ p }}</p>
 
-                <div class="toolbar bottom-toolbar">
-                    <div class="toolbar-group">
-                        <router-link class="btn" :to="'/' + bookSlug">TOC</router-link>
-                    </div>
-                    <div class="toolbar-group">
-                        <router-link class="btn" :class="{ disabled: chapterData.prev === null }" :to="chapterData.prev !== null ? '/' + bookSlug + '/' + chapterData.prev : ''">
-                            &larr; Ch. {{ chapterData.prev !== null ? chapterData.prev : '—' }}
-                        </router-link>
-                        <router-link class="btn" :class="{ disabled: chapterData.next === null }" :to="chapterData.next !== null ? '/' + bookSlug + '/' + chapterData.next : ''">
-                            Ch. {{ chapterData.next !== null ? chapterData.next : '—' }} &rarr;
-                        </router-link>
-                    </div>
-                </div>
-            </template>
-        </div>
-    </template>
+				<div class="toolbar">
+					<div class="toolbar-group">
+						<router-link class="btn" :to="'/' + bookSlug">TOC</router-link>
+					</div>
+					<div class="toolbar-group">
+						<router-link class="btn" :class="{ disabled: chapterData.prev === null }" :to="chapterData.prev !== null ? '/' + bookSlug + '/' + chapterData.prev : ''">
+							&larr; Ch. {{ chapterData.prev !== null ? chapterData.prev : '—' }}
+						</router-link>
+						<router-link class="btn" :class="{ disabled: chapterData.next === null }" :to="chapterData.next !== null ? '/' + bookSlug + '/' + chapterData.next : ''">
+							Ch. {{ chapterData.next !== null ? chapterData.next : '—' }} &rarr;
+						</router-link>
+					</div>
+				</div>
+			</template>
+		</div>
+	</template>
 
-    <script>
-        const queryParams = new URLSearchParams(window.location.search);
-        const redirectedPath = queryParams.get("p");
-        if (redirectedPath) {
-            window.history.replaceState(null, null, "/test2" + redirectedPath + window.location.hash);
-        }
+	<script>
+		const queryParams = new URLSearchParams(window.location.search);
+		const redirectedPath = queryParams.get("p");
+		if (redirectedPath) {
+			window.history.replaceState(null, null, "/test2" + redirectedPath + window.location.hash);
+		}
 
-        const { createApp } = Vue;
-        const { createRouter, createWebHistory } = VueRouter;
+		const { createApp } = Vue;
+		const { createRouter, createWebHistory } = VueRouter;
 
-        const HomeView = {
-            template: "#home-view-template",
-            data() {
-                return { books: [] };
-            },
-            async mounted() {
-                try {
-                    const response = await fetch("/test2/data/catalog.json");
-                    if (response.ok) {
-                        this.books = await response.json();
-                    }
-                } catch (e) {
-                    console.error("Failed to load catalog", e);
-                }
-            }
-        };
+		const HomeView = {
+			template: "#home-view-template",
+			data() {
+				return { books: [] };
+			},
+			async mounted() {
+				try {
+					const response = await fetch("/test2/data/catalog.json");
+					if (response.ok) {
+						this.books = await response.json();
+					}
+				} catch (e) {
+					console.error("Failed to load catalog", e);
+				}
 
-        const TocView = {
-            template: "#toc-view-template",
-            data() {
-                return {
-					tocData: null,
-					view: "grid"
+				this.scrollListener = () => {
+					const drawer = this.$refs.drawer;
+					if (drawer) drawer.classList.remove("open");
 				};
-            },
-            async created() {
-                await this.fetchToc();
-                this.loadProgress();
-            },
-            watch: {
-                '$route.params.bookSlug'(newSlug) {
+				window.addEventListener("scroll", this.scrollListener);
+
+				this.clickListener = (event) => {
+					const drawer = this.$refs.drawer;
+					if (!drawer) return;
+					if (event.target.closest(".btn") || event.target.closest("a")) {
+						drawer.classList.remove("open");
+					} else {
+						drawer.classList.toggle("open");
+					}
+				};
+				document.addEventListener("click", this.clickListener);
+			},
+			unmounted() {
+				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.clickListener);
+			},
+		};
+
+		const TocView = {
+			template: "#toc-view-template",
+			data() {
+				return {
+					tocData: null,
+					view: "grid",
+					perPage: 100
+				};
+			},
+			computed: {
+				currentPage() {
+					const page = parseInt(this.$route.query.page, 10);
+					return (!isNaN(page) && page > 0) ? page : 1;
+				},
+				totalPages() {
+					if (!this.tocData || !this.tocData.chapters) return 1;
+					return Math.ceil(this.tocData.chapters.length / this.perPage);
+				},
+				paginatedChapters() {
+					if (!this.tocData || !this.tocData.chapters) return [];
+					const start = (this.currentPage - 1) * this.perPage;
+					const end = start + this.perPage;
+					return this.tocData.chapters.slice(start, end);
+				},
+				paginatedRange() {
+					if (!this.tocData || !this.tocData.chapters) return [0, 0];
+					const start = (this.currentPage - 1) * this.perPage;
+					const end = Math.min(start + this.perPage, this.tocData.chapters.length-1);
+					return [this.tocData.chapters[start].num, this.tocData.chapters[end].num];
+				}
+			},
+			async created() {
+				await this.fetchToc();
+				this.loadProgress();
+			},
+			mounted() {
+				this.scrollListener = () => {
+					const drawer = this.$refs.drawer;
+					if (drawer) drawer.classList.remove("open");
+				};
+				window.addEventListener("scroll", this.scrollListener);
+
+				this.clickListener = (event) => {
+					const drawer = this.$refs.drawer;
+					if (!drawer) return;
+					if (event.target.closest(".btn") || event.target.closest("a")) {
+						drawer.classList.remove("open");
+					} else {
+						drawer.classList.toggle("open");
+					}
+				};
+				document.addEventListener("click", this.clickListener);
+			},
+			unmounted() {
+				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.clickListener);
+			},
+			watch: {
+				'$route.params.bookSlug'(newSlug) {
 					if (newSlug) {
 						this.fetchToc().then(() => {
 							this.loadProgress();
 						});
 					}
-                }
-            },
-            methods: {
-                async fetchToc() {
-                    const bookSlug = this.$route.params.bookSlug;
-                    try {
-                        const response = await fetch(`/test2/data/${bookSlug}/toc.json`);
-                        if (!response.ok) throw new Error("TOC missing");
-                        this.tocData = await response.json();
-                        if (this.tocData && this.tocData.title) {
-                            document.title = this.tocData.title;
-                        }
-                    } catch (e) {
-                        console.error("Failed to load TOC", e);
-                    }
-                },
-                loadProgress() {
-                    document.querySelectorAll(".grid-item").forEach(box => {
-                        box.classList.remove("viewed", "latest-viewed");
-                    });
+				},
+				paginatedChapters() {
+					this.$nextTick(() => {
+						this.loadProgress();
+					});
+				}
+			},
+			methods: {
+				async fetchToc() {
+					const bookSlug = this.$route.params.bookSlug;
+					try {
+						const response = await fetch(`/test2/data/${bookSlug}/toc.json`);
+						if (!response.ok) throw new Error("TOC missing");
+						this.tocData = await response.json();
+						if (this.tocData && this.tocData.title) {
+							document.title = this.tocData.title;
+						}
+					} catch (e) {
+						console.error("Failed to load TOC", e);
+					}
+				},
+				loadProgress() {
+					document.querySelectorAll(".list-item").forEach(box => {
+						box.classList.remove("viewed", "latest-viewed");
+					});
 
 					const bookSlug = this.$route.params.bookSlug;
 					const viewCookie = this.getCookie("view_mode_" + bookSlug);
@@ -211,209 +349,218 @@
 						this.view = viewCookie;
 					}
 
-                    const historyCookie = this.getCookie("reading_history_" + bookSlug);
-                    if (historyCookie) {
-                        try {
-                            const history = JSON.parse(decodeURIComponent(historyCookie));
-                            if (Array.isArray(history) && history.length > 0) {
-                                const latest = history[history.length - 1];
-                                history.forEach(chNum => {
-                                    const box = document.querySelector(`.grid-item[data-chapter="${chNum}"]`);
-                                    if (box) {
-                                        if (chNum === latest) {
-                                            box.classList.add("latest-viewed");
-                                        } else {
-                                            box.classList.add("viewed");
-                                        }
-                                    }
-                                });
-                            }
-                        } catch (e) {
-                            console.error("Could not parse reading history cookie", e);
-                        }
-                    }
-                },
-                resetProgress() {
-                    const bookSlug = this.$route.params.bookSlug;
-                    if (window.confirm("Are you sure you want to reset your reading progress for this book?")) {
-                        document.cookie = `reading_history_${bookSlug}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-                        this.loadProgress();
-                    }
-                },
+					const historyCookie = this.getCookie("reading_history_" + bookSlug);
+					if (historyCookie) {
+						try {
+							const history = JSON.parse(decodeURIComponent(historyCookie));
+							if (Array.isArray(history) && history.length > 0) {
+								const latest = history[history.length - 1];
+								history.forEach(chNum => {
+									const box = document.querySelector(`.list-item[data-chapter="${chNum}"]`);
+									if (box) {
+										if (chNum === latest) {
+											box.classList.add("latest-viewed");
+										} else {
+											box.classList.add("viewed");
+										}
+									}
+								});
+							}
+						} catch (e) {
+							console.error("Could not parse reading history cookie", e);
+						}
+					}
+				},
+				resetProgress() {
+					const bookSlug = this.$route.params.bookSlug;
+					if (window.confirm("Are you sure you want to reset your reading progress for this book?")) {
+						document.cookie = `reading_history_${bookSlug}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+						this.loadProgress();
+					}
+				},
+				goHome() {
+					this.$router.push("/");
+				},
 				changeView() {
 					this.view = this.view === "grid" ? "list" : "grid";
-                    const bookSlug = this.$route.params.bookSlug;
-                    const d = new Date();
-                    d.setTime(d.getTime() + (365*24*60*60*1000));
-                    document.cookie = `view_mode_${bookSlug}=${this.view};expires=${d.toUTCString()};path=/;`;
+					const bookSlug = this.$route.params.bookSlug;
+					const d = new Date();
+					d.setTime(d.getTime() + (365*24*60*60*1000));
+					document.cookie = `view_mode_${bookSlug}=${this.view};expires=${d.toUTCString()};path=/;`;
 
-                    this.$nextTick(() => {
-                        this.loadProgress();
-                    });
+					this.$nextTick(() => {
+						this.loadProgress();
+					});
 				},
-                getCookie(name) {
-                    const value = "; " + document.cookie;
-                    const parts = value.split("; " + name + "=");
-                    if (parts.length === 2) return parts.pop().split(";").shift();
-                    return "";
-                }
-            }
-        };
+				getCookie(name) {
+					const value = "; " + document.cookie;
+					const parts = value.split("; " + name + "=");
+					if (parts.length === 2) return parts.pop().split(";").shift();
+					return "";
+				}
+			}
+		};
 
-        const ChapterView = {
-            template: "#chapter-view-template",
-            data() {
-                return {
-                    chapterData: null,
-                    bookSlug: this.$route.params.bookSlug
-                };
-            },
-            async created() {
-                await this.loadChapter();
-            },
-            mounted() {
-                this.scrollListener = () => {
-                    const drawer = this.$refs.sideDrawer;
-                    if (drawer) drawer.classList.remove("open");
-                };
-                window.addEventListener("scroll", this.scrollListener);
+		const ChapterView = {
+			template: "#chapter-view-template",
+			data() {
+				return {
+					chapterData: null,
+					bookSlug: this.$route.params.bookSlug
+				};
+			},
+			async created() {
+				await this.loadChapter();
+			},
+			mounted() {
+				this.scrollListener = () => {
+					const drawer = this.$refs.drawer;
+					if (drawer) drawer.classList.remove("open");
+				};
+				window.addEventListener("scroll", this.scrollListener);
 
-                this.clickListener = (event) => {
-                    const drawer = this.$refs.sideDrawer;
-                    if (!drawer) return;
-                    if (event.target.closest("div") || event.target.closest("a") || event.target.closest(".drawer")) {
-                        drawer.classList.remove("open");
-                    } else {
-                        drawer.classList.toggle("open");
-                    }
-                };
-                document.addEventListener("click", this.clickListener);
-            },
-            unmounted() {
-                window.removeEventListener("scroll", this.scrollListener);
-                document.removeEventListener("click", this.clickListener);
-            },
-            watch: {
-                '$route.params.chapterNum'(newNum) {
+				this.clickListener = (event) => {
+					const drawer = this.$refs.drawer;
+					console.log(drawer)
+					if (!drawer) return;
+					if (event.target.closest(".btn") || event.target.closest("a")) {
+						drawer.classList.remove("open");
+					} else {
+						drawer.classList.toggle("open");
+					}
+				};
+				document.addEventListener("click", this.clickListener);
+
+				//document.documentElement.classList.add("hide-scrollbar");
+			},
+			unmounted() {
+				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.clickListener);
+
+				// for some reason, this doesn't make the scrollbar reappear
+				//document.documentElement.classList.remove("hide-scrollbar");
+			},
+			watch: {
+				'$route.params.chapterNum'(newNum) {
 					if (newNum) {
 						this.loadChapter();
 					}
-                }
-            },
-            methods: {
-                async loadChapter() {
-                    const { bookSlug, chapterNum } = this.$route.params;
-                    this.bookSlug = bookSlug;
-                    try {
-                        const response = await fetch(`/test2/data/${bookSlug}/chapter_${chapterNum}.json`);
-                        if (!response.ok) throw new Error("Chapter missing");
-                        this.chapterData = await response.json();
-                        window.scrollTo(0, 0);
-                        this.recordChapterView(bookSlug, chapterNum);
-                    } catch (e) {
-                        console.error("Failed to load chapter", e);
-                    }
-                },
-                goToToc() {
-                    if (this.bookSlug) {
-                        this.$router.push('/' + this.bookSlug);
-                    }
-                },
-                navigateChapter(chapterNum) {
-                    if (this.bookSlug && chapterNum !== null) {
-                        this.$router.push(`/${this.bookSlug}/${chapterNum}`);
-                    }
-                },
-                getCookie(name) {
-                    const value = "; " + document.cookie;
-                    const parts = value.split("; " + name + "=");
-                    if (parts.length === 2) return parts.pop().split(";").shift();
-                    return "";
-                },
-                recordChapterView(bookSlug, chNum) {
-                    let history = [];
-                    const cookieVal = this.getCookie("reading_history_" + bookSlug);
-                    if (cookieVal) {
-                        try {
-                            history = JSON.parse(decodeURIComponent(cookieVal));
-                        } catch(e) {
-                            history = [];
-                        }
-                    }
-                    history = history.filter(num => num !== chNum);
-                    history.push(chNum);
-                    const d = new Date();
-                    d.setTime(d.getTime() + (365*24*60*60*1000));
-                    document.cookie = `reading_history_${bookSlug}=` + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
-                }
-            }
-        };
+				}
+			},
+			methods: {
+				async loadChapter() {
+					const { bookSlug, chapterNum } = this.$route.params;
+					this.bookSlug = bookSlug;
+					try {
+						const response = await fetch(`/test2/data/${bookSlug}/chapter_${chapterNum}.json`);
+						if (!response.ok) throw new Error("Chapter missing");
+						this.chapterData = await response.json();
+						window.scrollTo(0, 0);
+						this.recordChapterView(bookSlug, chapterNum);
+					} catch (e) {
+						console.error("Failed to load chapter", e);
+					}
+				},
+				goToToc() {
+					if (this.bookSlug) {
+						this.$router.push("/" + this.bookSlug);
+					}
+				},
+				navigateChapter(chapterNum) {
+					if (this.bookSlug && chapterNum !== null) {
+						this.$router.push(`/${this.bookSlug}/${chapterNum}`);
+					}
+				},
+				getCookie(name) {
+					const value = "; " + document.cookie;
+					const parts = value.split("; " + name + "=");
+					if (parts.length === 2) return parts.pop().split(";").shift();
+					return "";
+				},
+				recordChapterView(bookSlug, chNum) {
+					let history = [];
+					const cookieVal = this.getCookie("reading_history_" + bookSlug);
+					if (cookieVal) {
+						try {
+							history = JSON.parse(decodeURIComponent(cookieVal));
+						} catch(e) {
+							history = [];
+						}
+					}
+					history = history.filter(num => num !== chNum);
+					history.push(chNum);
+					const d = new Date();
+					d.setTime(d.getTime() + (365*24*60*60*1000));
+					document.cookie = `reading_history_${bookSlug}=` + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
+				}
+			}
+		};
 
-        const routes = [
-            { path: "/", component: HomeView },
-            { path: "/:bookSlug", component: TocView, name: "toc" },
-            { path: "/:bookSlug/:chapterNum", component: ChapterView, name: "chapter" }
-        ];
+		const routes = [
+			{ path: "/", component: HomeView },
+			{ path: "/:bookSlug", component: TocView, name: "toc" },
+			{ path: "/:bookSlug/:chapterNum", component: ChapterView, name: "chapter" }
+		];
 
-        const router = createRouter({
-            history: createWebHistory("/test2/"),
-            routes
-        });
+		const router = createRouter({
+			history: createWebHistory("/test2/"),
+			routes
+		});
 
-        const app = createApp({
-            data() {
-                return {
-                    isFadeActive: false,
-                    progressWidth: 0
-                };
-            },
-            mounted() {
-                window.addEventListener("scroll", this.updateProgressBar);
+		const app = createApp({
+			data() {
+				return {
+					isFadeActive: false,
+					progressWidth: 0
+				};
+			},
+			mounted() {
+				window.addEventListener("scroll", this.updateProgressBar);
 
-                document.addEventListener("fullscreenchange", () => {
-                    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-                    if (document.fullscreenElement && isMobile) {
-                        document.body.classList.add("mobile-fullscreen");
-                    } else {
-                        document.body.classList.remove("mobile-fullscreen");
-                    }
-                    this.updateProgressBar();
-                });
-            },
-            methods: {
-                updateProgressBar() {
-                    const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
-                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                    this.progressWidth = height > 0 ? (winScroll / height) * 100 : 0;
-                },
-                toggleFullScreen() {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch((err) => {
-                            console.error("Error attempting full-screen:", err.message);
-                        });
-                    } else if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
-                },
-                toggleFullScreenWithFade() {
-                    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-                    if (isMobile) {
-                        this.isFadeActive = true;
-                        setTimeout(() => {
-                            this.toggleFullScreen();
-                            setTimeout(() => {
-                                this.isFadeActive = false;
-                            }, 150);
-                        }, 150);
-                    } else {
-                        this.toggleFullScreen();
-                    }
-                }
-            }
-        });
+				document.addEventListener("fullscreenchange", () => {
+					const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+					if (document.fullscreenElement && isMobile) {
+						document.body.classList.add("mobile-fullscreen");
+					} else {
+						document.body.classList.remove("mobile-fullscreen");
+					}
+					this.updateProgressBar();
+				});
+			},
+			methods: {
+				updateProgressBar() {
+					const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+					const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+					this.progressWidth = height > 0 ? (winScroll / height) * 100 : 0;
+				},
+				toggleFullScreen() {
+					if (!document.fullscreenElement) {
+						document.documentElement.requestFullscreen().catch((err) => {
+							console.error("Error attempting full-screen:", err.message);
+						});
+					} else if (document.exitFullscreen) {
+						document.exitFullscreen();
+					}
+				},
+				toggleFullScreenWithFade() {
+					const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+					if (isMobile) {
+						this.isFadeActive = true;
+						setTimeout(() => {
+							this.toggleFullScreen();
+							setTimeout(() => {
+								this.isFadeActive = false;
+							}, 150);
+						}, 150);
+					} else {
+						this.toggleFullScreen();
+					}
+				}
+			}
+		});
 
-        app.use(router);
-        app.mount("#app");
-    </script>
+		app.use(router);
+		app.mount("#app");
+	</script>
 </body>
 </html>
