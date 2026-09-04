@@ -68,7 +68,7 @@
                             <path d="M3 3v5h5"/>
                         </svg>
                     </div>
-                    <div class="btn" @click="" title="Change View">
+                    <div class="btn" @click="changeView" title="Change View">
                         Change View
                     </div>
 				</div>
@@ -77,9 +77,9 @@
             <template v-if="tocData">
                 <h1 class="page-title">{{ tocData.title }}</h1>
                 <h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
-                <div class="title-grid">
-                    <router-link v-for="ch in tocData.chapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="btn grid-item" :data-chapter="ch.num">
-                        Ch. {{ ch.num }}
+                <div :class="view === 'grid' ? 'title-grid' : 'title-list'">
+                    <router-link v-for="ch in tocData.chapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" :class="view === 'grid' ? 'btn grid-item' : 'text-link'" :data-chapter="ch.num">
+                        {{ view === 'grid' ? 'Ch. ' + ch.num : 'Ch. ' + ch.num + ' - ' + ch.title }}
                     </router-link>
                 </div>
             </template>
@@ -174,7 +174,10 @@
         const TocView = {
             template: "#toc-view-template",
             data() {
-                return { tocData: null };
+                return {
+					tocData: null,
+					view: "grid"
+				};
             },
             async created() {
                 await this.fetchToc();
@@ -208,7 +211,12 @@
                         box.classList.remove("viewed", "latest-viewed");
                     });
 
-                    const bookSlug = this.$route.params.bookSlug;
+					const bookSlug = this.$route.params.bookSlug;
+					const viewCookie = this.getCookie("view_mode_" + bookSlug);
+					if (viewCookie === "list" || viewCookie === "grid") {
+						this.view = viewCookie;
+					}
+
                     const historyCookie = this.getCookie("reading_history_" + bookSlug);
                     if (historyCookie) {
                         try {
@@ -238,6 +246,17 @@
                         this.loadProgress();
                     }
                 },
+				changeView() {
+					this.view = this.view === "grid" ? "list" : "grid";
+                    const bookSlug = this.$route.params.bookSlug;
+                    const d = new Date();
+                    d.setTime(d.getTime() + (365*24*60*60*1000));
+                    document.cookie = `view_mode_${bookSlug}=${this.view};expires=${d.toUTCString()};path=/;`;
+
+                    this.$nextTick(() => {
+                        this.loadProgress();
+                    });
+				},
                 getCookie(name) {
                     const value = "; " + document.cookie;
                     const parts = value.split("; " + name + "=");
