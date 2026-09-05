@@ -109,6 +109,12 @@
 			<template v-if="tocData">
 				<h1 class="page-title">{{ tocData.title }}</h1>
 				<h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
+				
+				<p>{{ 'Total Chapters: ' + tocData.chapters.length }}</p>
+				<template v-if="latest">
+					<p>{{ 'Last Read: ' + latest.date }}</p>
+					<p><span>{{ 'Latest Viewed: Chapter ' + latest.num }}</span><router-link :to="'/' + tocData.slug + '/' + latest.num" class="btn">Continue</router-link></p>
+				</template>
 
 				<div class="pagination-controls" v-if="totalPages > 1" style="margin-bottom: 32px;">
 					<div class="toolbar-group">
@@ -265,7 +271,8 @@
 				return {
 					tocData: null,
 					view: "grid",
-					perPage: 100
+					perPage: 100,
+					latest: null,
 				};
 			},
 			computed: {
@@ -366,17 +373,17 @@
 							const history = JSON.parse(decodeURIComponent(historyCookie));
 							if (Array.isArray(history) && history.length > 0) {
 								const latest = history[history.length - 1];
-								history.forEach(chNum => {
-									const box = document.querySelector(`.list-item[data-chapter="${chNum}"]`);
+								history.forEach(ch => {
+									const box = document.querySelector(`.list-item[data-chapter="${ch.num}"]`);
 									if (box) {
-										if (chNum === latest) {
+										if (ch.num === latest.num) {
 											box.classList.add("latest-viewed");
 										} else {
 											box.classList.add("viewed");
 										}
 									}
 								});
-								
+								this.latest = latest;
 							}
 						} catch (e) {
 							console.error("Could not parse reading history cookie", e);
@@ -517,9 +524,9 @@
 							history = [];
 						}
 					}
-					history = history.filter(num => num !== chNum);
-					history.push(chNum);
+					history = history.filter(ch => ch.num !== chNum);
 					const d = new Date();
+					history.push({ "num": chNum, "date": d.toISOString() });
 					d.setTime(d.getTime() + (365*24*60*60*1000));
 					document.cookie = `reading_history_${bookSlug}=` + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
 				}
