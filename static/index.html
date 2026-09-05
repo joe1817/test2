@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#121212">
     <title>Ebook Reader</title>
 	<style>
-		html {
+		:root, html, body {
 			background-color: #121212;
 			color-scheme: dark;
 		}
@@ -14,6 +16,18 @@
 			background-color: #121212;
 			min-height: 100vh;
 			margin: 0;
+		}
+		#load-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background-color: #121212;
+			opacity: 1;
+			transition: opacity 0.15s ease-in-out;
+			pointer-events: none;
+			z-index: 9999;
 		}
 	</style>
 	<link rel="stylesheet" href="/test2/styles/index.css">
@@ -24,10 +38,12 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="/test2/favicon-32x32.png">
 	<link rel="apple-touch-icon" sizes="180x180" href="/test2/apple-touch-icon.png">
 	<link rel="manifest" href="/test2/site.webmanifest">
-	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-	<script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+	<script src="/test2/lib/vue@3.5.42.prod.js"></script>
+	<script src="/test2/lib/vue-router@4.6.4.prod.js"></script>
 </head>
 <body>
+	<div id="load-overlay"></div>
+
 	<div id="app">
 		<div id="fade-overlay" :class="{ active: isFadeActive }"></div>
 
@@ -35,7 +51,7 @@
 		<div class="letterbox-bottom"></div>
 		<div class="progress-bar" id="progressBar" :style="{ width: progressWidth + '%' }"></div>
 
-		<div class="main-wrapper">
+		<div class="main-wrapper" ref="mainWrapper">
 			<router-view></router-view>
 		</div>
 	</div>
@@ -90,7 +106,7 @@
 						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
 					</svg>
 				</div>
-				<div class="btn" @click="changeView" title="Change View">
+				<div class="btn icon-btn" @click="changeView" title="Change View">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						  <rect x="3" y="3" width="7" height="7" rx="0.5" />
 						  <rect x="3" y="14" width="7" height="7" rx="0.5" />
@@ -105,9 +121,14 @@
 				</div>
 			</div>
 
-			<div class="toolbar">
+			<div class="horiz-strip toolbar">
 				<div class="toolbar-group">
 					<router-link class="btn" :to="'/'">Library</router-link>
+				</div>
+				<div class="toolbar-group">
+					<span class="updated-date">
+						<span class="small-text">Updated:</span> <span class="date">{{ updatedDate }}</span>
+					</span>
 				</div>
 			</div>
 
@@ -115,7 +136,36 @@
 				<h1 class="page-title">{{ tocData.title }}</h1>
 				<h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
 
-				<div class="pagination-controls" v-if="totalPages > 1" style="margin-bottom: 32px;">
+				<div class="horiz-strip progress-strip">
+					<div class="toolbar-group">
+						<div class="info-wrapper">
+							<div class="info" id="info-progress">
+								<div class="info-label" id="info-label-progress">
+									Progress
+								</div>
+								<div class="info-val" id="info-val-updated-date">
+									{{ totalRead }}<span class="small-text">&nbsp;/{{ tocData.chapters.length }}</span>
+								</div>
+							</div>
+						</div>
+						<div class="info-wrapper" v-if="lastRead">
+							<div class="vertical-bar"></div>
+							<div class="info" id="info-last-read">
+								<div class="info-label" id="info-label-last-read">
+									Last Read
+								</div>
+								<div class="info-val" id="info-val-last-read">
+									<span class="small-text">Ch.&nbsp;</span>{{ lastRead }}
+								</div>
+							</div>
+							<div>
+								<router-link :to="'/' + tocData.slug + '/' + lastRead" class="btn">Continue &rarr;</router-link>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
 					<div class="toolbar-group">
 						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
 						<span>Page {{ currentPage }} of {{ totalPages }}</span>
@@ -129,25 +179,28 @@
 				<template v-if="view === 'grid'">
 					<div class="title-grid">
 						<router-link v-for="ch in paginatedChapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="btn list-item" :data-chapter="ch.num">
-							<span class="chapterNum">{{ ch.num }}</span>
+							<span class="chapter-num">{{ ch.num }}</span>
 						</router-link>
 					</div>
 				</template>
 				<template v-else>
 					<div class="title-list">
-						<div v-for="ch in paginatedChapters" :key="ch.num" class="link-wrapper">
-							<router-link :to="'/' + tocData.slug + '/' + ch.num" class="text-link list-item" :data-chapter="ch.num">
-								<span class="chapterNum">{{ ch.num }}</span><span class="chapterTitle">{{ ch.title }}</span>
+						<div v-for="ch in paginatedChapters" :key="ch.num" class="link-wrapper list-item" :data-chapter="ch.num">
+							<router-link :to="'/' + tocData.slug + '/' + ch.num" class="text-link">
+								<span class="chapter-num small-text">{{ ch.num }}</span><span class="chapter-title">{{ ch.title }}</span>
 							</router-link>
+							<span v-if="ch.date" class="date">
+								{{ ch.date }}
+							</span>
 						</div>
 					</div>
 				</template>
 
-				<div class="pagination-controls" v-if="totalPages > 1" style="margin-top: 32px;">
+				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
 					<div class="toolbar-group">
-						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">&larr; Prev</router-link>
+						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
 						<span>Page {{ currentPage }} of {{ totalPages }}</span>
-						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next &rarr;</router-link>
+						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next ›</router-link>
 					</div>
 					<div class="toolbar-group chapter-range">
 						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
@@ -158,7 +211,7 @@
 	</template>
 
 	<template id="chapter-view-template">
-		<div id="chapter-container" class="chapter-view active">
+		<div id="chapter-container" class="chapter-view">
 
 			<div class="drawer" id="drawer-chapter" ref="drawer">
 				<div class="btn icon-btn" @click="goToToc" title="Go to TOC">
@@ -181,7 +234,7 @@
 			</div>
 
 			<template v-if="chapterData">
-				<div class="toolbar">
+				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug + '?from=' + chapterData.num">TOC</router-link>
 					</div>
@@ -196,10 +249,14 @@
 				</div>
 
 				<p class="chapter-num">Chapter {{ chapterData.num }}</p>
-				<h1 class="chapter-heading">{{ chapterData.title }}</h1>
-				<p v-for="(p, index) in chapterData.paragraphs" :key="index" v-html="p"></p>
+				<h1 class="chapter-title">{{ chapterData.title }}</h1>
+				<template v-for="(p, index) in chapterData.paragraphs" :key="index">
+					<hr class="time-skip" v-if="p === '---'">
+					<hr class="addendum" v-else-if="p === '====='">
+					<p v-else v-html="p"></p>
+				</template>
 
-				<div class="toolbar">
+				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug + '?from=' + chapterData.num">TOC</router-link>
 					</div>
@@ -247,12 +304,20 @@
 				};
 				window.addEventListener("scroll", this.scrollListener);
 
+				this.mouseDownListener = (event) => {
+					this.selectionOnMouseDown = window.getSelection().toString().length > 0;
+				};
+				document.addEventListener("mousedown", this.mouseDownListener);
+
 				this.clickListener = (event) => {
 					const drawer = this.$refs.drawer;
+					const selectionOnMouseUp = window.getSelection().toString().length > 0;
 					if (!drawer) return;
-					if (event.target.closest(".btn") || event.target.closest("a")) {
+					if (drawer.classList.contains("open")) {
+						drawer.classList.toggle("open");
+					} else if (event.target.closest(".btn") || event.target.closest("a")) {
 						drawer.classList.remove("open");
-					} else {
+					} else if (!this.selectionOnMouseDown && !selectionOnMouseUp) {
 						drawer.classList.toggle("open");
 					}
 				};
@@ -260,6 +325,7 @@
 			},
 			unmounted() {
 				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.mouseDownListener);
 				document.removeEventListener("click", this.clickListener);
 			},
 		};
@@ -270,7 +336,9 @@
 				return {
 					tocData: null,
 					view: "grid",
-					perPage: 100
+					perPage: 100,
+					lastRead: null,
+					totalRead: 0,
 				};
 			},
 			computed: {
@@ -293,7 +361,11 @@
 					const start = (this.currentPage - 1) * this.perPage;
 					const end = Math.min(start + this.perPage, this.tocData.chapters.length-1);
 					return [this.tocData.chapters[start].num, this.tocData.chapters[end].num];
-				}
+				},
+				updatedDate() {
+					const date = this.tocData?.chapters?.at(-1)?.date;
+					return date ? date : "---";
+				},
 			},
 			async mounted() {
 				this.scrollListener = () => {
@@ -302,12 +374,20 @@
 				};
 				window.addEventListener("scroll", this.scrollListener);
 
+				this.mouseDownListener = (event) => {
+					this.selectionOnMouseDown = window.getSelection().toString().length > 0;
+				};
+				document.addEventListener("mousedown", this.mouseDownListener);
+
 				this.clickListener = (event) => {
 					const drawer = this.$refs.drawer;
+					const selectionOnMouseUp = window.getSelection().toString().length > 0;
 					if (!drawer) return;
-					if (event.target.closest(".btn") || event.target.closest("a")) {
+					if (drawer.classList.contains("open")) {
+						drawer.classList.toggle("open");
+					} else if (event.target.closest(".btn") || event.target.closest("a")) {
 						drawer.classList.remove("open");
-					} else {
+					} else if (!this.selectionOnMouseDown && !selectionOnMouseUp) {
 						drawer.classList.toggle("open");
 					}
 				};
@@ -322,6 +402,7 @@
 			},
 			unmounted() {
 				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.mouseDownListener);
 				document.removeEventListener("click", this.clickListener);
 			},
 			watch: {
@@ -361,38 +442,43 @@
 				},
 				loadProgress() {
 					document.querySelectorAll(".list-item").forEach(box => {
-						box.classList.remove("viewed", "latest-viewed");
+						box.classList.remove("read", "last-read");
 					});
 
 					const bookSlug = this.$route.params.bookSlug;
 					const historyCookie = this.getCookie("reading_history_" + bookSlug);
 					if (historyCookie) {
 						try {
-							const history = JSON.parse(decodeURIComponent(historyCookie));
-							if (Array.isArray(history) && history.length > 0) {
-								const latest = history[history.length - 1];
-								history.forEach(chNum => {
-									const box = document.querySelector(`.list-item[data-chapter="${chNum}"]`);
-									if (box) {
-										if (chNum === latest) {
-											box.classList.add("latest-viewed");
-										} else {
-											box.classList.add("viewed");
-										}
+							const history = historyCookie.split(",");
+							this.lastRead = history[history.length - 1];
+							let totalRead = 0;
+							history.forEach(ch => {
+								const box = document.querySelector(`.list-item[data-chapter="${ch}"]`);
+								if (box) {
+									if (ch === this.lastRead) {
+										box.classList.add("last-read");
+									} else {
+										box.classList.add("read");
 									}
-								});
-								
-							}
+								}
+								totalRead += 1;
+							});
+							this.totalRead = totalRead;
 						} catch (e) {
 							console.error("Could not parse reading history cookie", e);
 						}
+					} else {
+						this.lastRead = null;
+						this.totalRead = 0;
 					}
 				},
 				resetProgress() {
 					const bookSlug = this.$route.params.bookSlug;
 					if (window.confirm("Are you sure you want to reset your reading progress for this book?")) {
 						document.cookie = `reading_history_${bookSlug}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-						this.loadProgress();
+						this.$nextTick(() => {
+							this.loadProgress();
+						});
 					}
 				},
 				goHome() {
@@ -452,12 +538,20 @@
 				};
 				window.addEventListener("scroll", this.scrollListener);
 
+				this.mouseDownListener = (event) => {
+					this.selectionOnMouseDown = window.getSelection().toString().length > 0;
+				};
+				document.addEventListener("mousedown", this.mouseDownListener);
+
 				this.clickListener = (event) => {
 					const drawer = this.$refs.drawer;
+					const selectionOnMouseUp = window.getSelection().toString().length > 0;
 					if (!drawer) return;
-					if (event.target.closest(".btn") || event.target.closest("a")) {
+					if (drawer.classList.contains("open")) {
+						drawer.classList.toggle("open");
+					} else if (event.target.closest(".btn") || event.target.closest("a")) {
 						drawer.classList.remove("open");
-					} else {
+					} else if (!this.selectionOnMouseDown && !selectionOnMouseUp) {
 						drawer.classList.toggle("open");
 					}
 				};
@@ -467,6 +561,7 @@
 			},
 			unmounted() {
 				window.removeEventListener("scroll", this.scrollListener);
+				document.removeEventListener("click", this.mouseDownListener);
 				document.removeEventListener("click", this.clickListener);
 
 				// for some reason, this doesn't make the scrollbar reappear
@@ -517,16 +612,16 @@
 					const cookieVal = this.getCookie("reading_history_" + bookSlug);
 					if (cookieVal) {
 						try {
-							history = JSON.parse(decodeURIComponent(cookieVal));
+							history = cookieVal.split(",");
 						} catch(e) {
 							history = [];
 						}
 					}
-					history = history.filter(num => num !== chNum);
+					history = history.filter(ch => ch !== chNum);
 					history.push(chNum);
 					const d = new Date();
 					d.setTime(d.getTime() + (365*24*60*60*1000));
-					document.cookie = `reading_history_${bookSlug}=` + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
+					document.cookie = `reading_history_${bookSlug}=` + history.join(",") + ";expires=" + d.toUTCString() + ";path=/;";
 				}
 			}
 		};
@@ -561,6 +656,12 @@
 					}
 					this.updateProgressBar();
 				});
+
+				requestAnimationFrame(() => {
+					requestAnimationFrame(() => {
+						document.getElementById("load-overlay").style.opacity = "0";
+					});
+				});
 			},
 			methods: {
 				updateProgressBar() {
@@ -590,6 +691,8 @@
 					} else {
 						this.toggleFullScreen();
 					}
+
+					this.$refs.mainWrapper.classList.toggle("noselect");
 				}
 			}
 		});
