@@ -109,11 +109,36 @@
 			<template v-if="tocData">
 				<h1 class="page-title">{{ tocData.title }}</h1>
 				<h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
-				
-				<p>{{ 'Total Chapters: ' + tocData.chapters.length }}</p>
-				<template v-if="latest">
-					<p>{{ 'Last Read: ' + latest.date }}</p>
-					<p><span>{{ 'Latest Viewed: Chapter ' + latest.num }}</span><router-link :to="'/' + tocData.slug + '/' + latest.num" class="btn">Continue</router-link></p>
+				<div class="status-strip">
+					<div class="updated-date">
+						Updated: ---
+					</div>
+				</div>
+
+				<template v-if="lastRead">
+					<div class="progress-strip">
+						<div class="info">
+							<div id="info-label-progress">
+								Progress
+							</div>
+							<div id="info-val-updated-date">
+								0/{{ tocData.chapters.length }}
+							</div>
+						</div>
+						<div class="info-and-button">
+							<div class="info">
+								<div id="info-label-last-read">
+									Last Read
+								</div>
+								<div id="info-val-last-read">
+									{{ 'Chapter ' + lastRead.num }}
+								</div>
+							</div>
+							<div>
+								<router-link :to="'/' + tocData.slug + '/' + lastRead.num" class="btn">Continue ></router-link>
+							</div>
+						</div>
+					</div>				
 				</template>
 
 				<div class="pagination-controls" v-if="totalPages > 1" style="margin-bottom: 32px;">
@@ -272,7 +297,7 @@
 					tocData: null,
 					view: "grid",
 					perPage: 100,
-					latest: null,
+					lastRead: null,
 				};
 			},
 			computed: {
@@ -363,7 +388,7 @@
 				},
 				loadProgress() {
 					document.querySelectorAll(".list-item").forEach(box => {
-						box.classList.remove("viewed", "latest-viewed");
+						box.classList.remove("read", "last-read");
 					});
 
 					const bookSlug = this.$route.params.bookSlug;
@@ -372,18 +397,18 @@
 						try {
 							const history = JSON.parse(decodeURIComponent(historyCookie));
 							if (Array.isArray(history) && history.length > 0) {
-								const latest = history[history.length - 1];
+								const lastRead = history[history.length - 1];
 								history.forEach(ch => {
 									const box = document.querySelector(`.list-item[data-chapter="${ch.num}"]`);
 									if (box) {
-										if (ch.num === latest.num) {
-											box.classList.add("latest-viewed");
+										if (ch.num === lastRead.num) {
+											box.classList.add("last-read");
 										} else {
-											box.classList.add("viewed");
+											box.classList.add("read");
 										}
 									}
 								});
-								this.latest = latest;
+								this.lastRead = lastRead;
 							}
 						} catch (e) {
 							console.error("Could not parse reading history cookie", e);
@@ -595,9 +620,6 @@
 				}
 			}
 		});
-
-		app.use(router);
-		app.mount("#app");
 	</script>
 </body>
 </html>

@@ -287,36 +287,36 @@ body.mobile-fullscreen .main-wrapper {
 		font-weight: bold;
 	}
 
-	.list-item.viewed {
+	.list-item.read {
 		color: var(--accent-color);
 		background: var(--accent-bg);
 		border-color: var(--accent-border);
 	}
 
-	.list-item.viewed:hover {
+	.list-item.read:hover {
 		color: color-mix(in srgb, var(--accent-color) 90%, var(--hover-color) 10%);
 		background: color-mix(in srgb, var(--accent-bg) 90%, var(--hover-color) 10%);
 	}
 
-	.list-item.latest-viewed {
+	.list-item.last-read {
 		color: var(--color-strong);
 		background: var(--accent-bg-strong);
 		border-color: var(--accent-border-strong);
 		box-shadow: 0 0 8px var(--accent-shadow-strong);
 	}
 
-	.list-item.latest-viewed:hover {
+	.list-item.last-read:hover {
 		color: color-mix(in srgb, var(--color-strong) 85%, var(--hover-color) 15%);
 		background: color-mix(in srgb, var(--accent-bg-strong) 85%, var(--hover-color) 15%);
 	}
 }
 
 .title-list {
-	.list-item.viewed {
+	.list-item.read {
 		color: #85d882;
 	}
 
-	.list-item.latest-viewed {
+	.list-item.last-read {
 		color: #f07a5e;
 		font-weight: bold;
 	}
