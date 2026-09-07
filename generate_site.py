@@ -2,11 +2,12 @@ import os
 import re
 import json
 import shutil
+import subprocess
 
 def slugify(text):
 	return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
 
-def generate_html_site(input_filename, output_dir="docs"):
+def process_book(input_filename, output_dir):
 	if not os.path.exists(output_dir):
 		os.makedirs(output_dir)
 
@@ -69,7 +70,7 @@ def generate_html_site(input_filename, output_dir="docs"):
 	book_title = book_title_data[0]
 	subtitles = book_title_data[1:]
 	total_chapters = len(chapter_data)
-	book_slug = slugify(book_title)
+	book_slug = os.path.splitext(os.path.basename(input_filename))[0]
 
 	specific_book_dir = os.path.join(book_data_dir, book_slug)
 	if not os.path.exists(specific_book_dir):
@@ -110,7 +111,6 @@ def generate_html_site(input_filename, output_dir="docs"):
 	with open(os.path.join(specific_book_dir, "toc.json"), "w", encoding="utf-8") as toc_file:
 		json.dump(toc_payload, toc_file, ensure_ascii=False)
 
-	# Global registry or catalog for the homepage view
 	catalog_path = os.path.join(book_data_dir, "catalog.json")
 	catalog = []
 	if os.path.exists(catalog_path):
@@ -125,10 +125,39 @@ def generate_html_site(input_filename, output_dir="docs"):
 		with open(catalog_path, "w", encoding="utf-8") as cat_file:
 			json.dump(catalog, cat_file, ensure_ascii=False)
 
-	if os.path.exists("static"):
-		shutil.copytree("static", output_dir, dirs_exist_ok=True)
+def main():
+	static_dir = "static"
+	output_dir = "docs"
+	books_dir = "books"
+	process_dir = "post-process"
+	
+	preprocessors = os.listdir(process_dir)
+	
+	for book in sorted(os.listdir(books_dir)):
+		book_slug = os.path.splitext(book)[0]
+		book_path = os.path.join(books_dir, book)
+		processor_path = os.path.join(process_dir, f"{book_slug}.py")
+		data_path = os.path.join(process_dir, f"{book_slug}.dat")
+		tmp_path = os.path.join(process_dir, "_tmp", f"{book_slug}.tmp")
+		
+		print(f"Processing {book_slug}")
+		
+		if os.path.isfile(processor_path):
+			os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
+			if os.path.isfile(data_path):
+				subprocess.run(["python", processor_path, book_path, data_path, tmp_path])
+				process_book(tmp_path, output_dir)
+			else:
+				subprocess.run(["python", processor_path, book_path, tmp_path])
+				process_book(tmp_path, output_dir)
+			os.remove(tmp_path)
+		else:
+			process_book(book_path, output_dir)
+
+	if os.path.exists(static_dir):
+		shutil.copytree(static_dir, output_dir, dirs_exist_ok=True)
 
 	print(f"Successfully generated site in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
-	generate_html_site("_processed_book.txt")
+	main()

@@ -1,3 +1,4 @@
+import sys
 import re
 
 def read_file(file_path):
@@ -258,7 +259,7 @@ def process_chapter(s_chap, t_chap):
 
 	return new_chapter_lines
 
-def apply_spacing_to_translation(source_path, trans_path, output_path):
+def apply_spacing_to_translation(trans_path, source_path, output_path):
 	source_lines = read_file(source_path)
 	trans_lines = read_file(trans_path)
 
@@ -280,4 +281,4 @@ def apply_spacing_to_translation(source_path, trans_path, output_path):
 	write_file(output_path, output_lines)
 
 if __name__ == "__main__":
-	apply_spacing_to_translation("book_jpn_min.txt", "book.txt", "_processed_book.txt")
+	apply_spacing_to_translation(*sys.argv[1:])
