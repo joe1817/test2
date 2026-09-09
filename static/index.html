@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#121212">
     <title>Ebook Reader</title>
 	<style>
-		html {
+		:root, html, body {
 			background-color: #121212;
 			color-scheme: dark;
 		}
@@ -14,6 +16,18 @@
 			background-color: #121212;
 			min-height: 100vh;
 			margin: 0;
+		}
+		#load-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background-color: #121212;
+			opacity: 1;
+			transition: opacity 0.15s ease-in-out;
+			pointer-events: none;
+			z-index: 9999;
 		}
 	</style>
 	<link rel="stylesheet" href="/test2/styles/index.css">
@@ -28,6 +42,8 @@
 	<script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
 </head>
 <body>
+	<div id="load-overlay"></div>
+
 	<div id="app">
 		<div id="fade-overlay" :class="{ active: isFadeActive }"></div>
 
@@ -35,7 +51,7 @@
 		<div class="letterbox-bottom"></div>
 		<div class="progress-bar" id="progressBar" :style="{ width: progressWidth + '%' }"></div>
 
-		<div class="main-wrapper">
+		<div class="main-wrapper" ref="mainWrapper">
 			<router-view></router-view>
 		</div>
 	</div>
@@ -90,7 +106,7 @@
 						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
 					</svg>
 				</div>
-				<div class="btn" @click="changeView" title="Change View">
+				<div class="btn icon-btn" @click="changeView" title="Change View">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						  <rect x="3" y="3" width="7" height="7" rx="0.5" />
 						  <rect x="3" y="14" width="7" height="7" rx="0.5" />
@@ -235,8 +251,11 @@
 				</div>
 
 				<p class="chapter-num">Chapter {{ chapterData.num }}</p>
-				<h1 class="chapter-heading">{{ chapterData.title }}</h1>
-				<p v-for="(p, index) in chapterData.paragraphs" :key="index" v-html="p"></p>
+				<h1 class="chapter-title">{{ chapterData.title }}</h1>
+				<template v-for="(p, index) in chapterData.paragraphs" :key="index">
+					<hr v-if="p === '---'">
+					<p v-else v-html="p"></p>
+				</template>
 
 				<div class="toolbar">
 					<div class="toolbar-group">
@@ -612,6 +631,12 @@
 					}
 					this.updateProgressBar();
 				});
+
+				requestAnimationFrame(() => {
+					requestAnimationFrame(() => {
+						document.getElementById("load-overlay").style.opacity = "0";
+					});
+				});
 			},
 			methods: {
 				updateProgressBar() {
@@ -641,6 +666,8 @@
 					} else {
 						this.toggleFullScreen();
 					}
+
+					this.$refs.mainWrapper.classList.toggle("noselect");
 				}
 			}
 		});
