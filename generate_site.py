@@ -30,9 +30,10 @@ def process_book(input_filename, output_dir):
 	chapter_data = []
 	active_chapter_num = None
 	active_chapter_title = None
+	active_chapter_date = None
 	active_paragraphs = []
 
-	chapter_pattern = re.compile(r"^Chapter\s+(\d+)\s*-\s*(.+)$", re.IGNORECASE)
+	chapter_pattern = re.compile(r"^Chapter\s+(\d+)\s*-\s*(.+?)(\s*\[(.+)\])?$", re.IGNORECASE)
 
 	for line in lines:
 		match = chapter_pattern.match(line)
@@ -41,11 +42,13 @@ def process_book(input_filename, output_dir):
 				chapter_data.append({
 					"num": active_chapter_num,
 					"title": active_chapter_title,
-					"paragraphs": active_paragraphs
+					"date": active_chapter_date,
+					"paragraphs": active_paragraphs,
 				})
 				active_paragraphs = []
 			active_chapter_num = int(match.group(1))
 			active_chapter_title = match.group(2)
+			active_chapter_date = match.group(4)
 		else:
 			if active_chapter_num is None:
 				book_title_data.append(line)
@@ -56,7 +59,8 @@ def process_book(input_filename, output_dir):
 		chapter_data.append({
 			"num": active_chapter_num,
 			"title": active_chapter_title,
-			"paragraphs": active_paragraphs
+			"date": active_chapter_date,
+			"paragraphs": active_paragraphs,
 		})
 
 	if not book_title_data:
@@ -85,6 +89,7 @@ def process_book(input_filename, output_dir):
 		toc_chapters.append({
 			"num": current_num,
 			"title": ch["title"],
+			"date": ch["date"],
 			"prev": prev_num,
 			"next": next_num
 		})
