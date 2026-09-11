@@ -154,11 +154,11 @@
 								Last Read
 							</div>
 							<div class="info-val" id="info-val-last-read">
-								<span class="small-text">Ch.&nbsp;</span>{{ lastRead.num }}
+								<span class="small-text">Ch.&nbsp;</span>{{ lastRead }}
 							</div>
 						</div>
 						<div>
-							<router-link :to="'/' + tocData.slug + '/' + lastRead.num" class="btn">Continue &rarr;</router-link>
+							<router-link :to="'/' + tocData.slug + '/' + lastRead" class="btn">Continue &rarr;</router-link>
 						</div>
 					</div>
 				</div>
@@ -432,24 +432,21 @@
 					const historyCookie = this.getCookie("reading_history_" + bookSlug);
 					if (historyCookie) {
 						try {
-							const history = JSON.parse(decodeURIComponent(historyCookie));
-							if (Array.isArray(history) && history.length > 0) {
-								this.lastRead = history[history.length - 1];
-								const lastReadNum = this.lastRead.num;
-								let totalRead = 0;
-								history.forEach(ch => {
-									const box = document.querySelector(`.list-item[data-chapter="${ch.num}"]`);
-									if (box) {
-										if (ch.num === lastReadNum) {
-											box.classList.add("last-read");
-										} else {
-											box.classList.add("read");
-										}
+							const history = historyCookie.split(",");
+							this.lastRead = history[history.length - 1];
+							let totalRead = 0;
+							history.forEach(ch => {
+								const box = document.querySelector(`.list-item[data-chapter="${ch}"]`);
+								if (box) {
+									if (ch === this.lastRead) {
+										box.classList.add("last-read");
+									} else {
+										box.classList.add("read");
 									}
-									totalRead += 1;
-								});
-								this.totalRead = totalRead;
-							}
+								}
+								totalRead += 1;
+							});
+							this.totalRead = totalRead;
 						} catch (e) {
 							console.error("Could not parse reading history cookie", e);
 						}
@@ -462,7 +459,9 @@
 					const bookSlug = this.$route.params.bookSlug;
 					if (window.confirm("Are you sure you want to reset your reading progress for this book?")) {
 						document.cookie = `reading_history_${bookSlug}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-						this.loadProgress();
+						this.$nextTick(() => {
+							this.loadProgress();
+						});
 					}
 				},
 				goHome() {
@@ -587,16 +586,16 @@
 					const cookieVal = this.getCookie("reading_history_" + bookSlug);
 					if (cookieVal) {
 						try {
-							history = JSON.parse(decodeURIComponent(cookieVal));
+							history = cookieVal.split(",");
 						} catch(e) {
 							history = [];
 						}
 					}
-					history = history.filter(ch => ch.num !== chNum);
+					history = history.filter(ch => ch !== chNum);
+					history.push(chNum);
 					const d = new Date();
-					history.push({ "num": chNum, "date": d.toISOString() });
 					d.setTime(d.getTime() + (365*24*60*60*1000));
-					document.cookie = `reading_history_${bookSlug}=` + encodeURIComponent(JSON.stringify(history)) + ";expires=" + d.toUTCString() + ";path=/;";
+					document.cookie = `reading_history_${bookSlug}=` + history.join(",") + ";expires=" + d.toUTCString() + ";path=/;";
 				}
 			}
 		};
