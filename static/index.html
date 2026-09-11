@@ -121,7 +121,7 @@
 				</div>
 			</div>
 
-			<div class="toolbar">
+			<div class="horiz-strip toolbar">
 				<div class="toolbar-group">
 					<router-link class="btn" :to="'/'">Library</router-link>
 				</div>
@@ -136,36 +136,36 @@
 				<h1 class="page-title">{{ tocData.title }}</h1>
 				<h2 class="page-subtitle" v-for="(sub, sIndex) in tocData.subtitles" :key="sIndex">{{ sub }}</h2>
 
-				<div class="progress-strip">
-					<div class="info-wrapper">
-						<div class="info" id="info-progress">
-							<div class="info-label" id="info-label-progress">
-								Progress
-							</div>
-							<div class="info-val" id="info-val-updated-date">
-								{{ totalRead }}<span class="small-text">&nbsp;/{{ tocData.chapters.length }}</span>
-							</div>
-						</div>
-					</div>
-					<div class="info-wrapper" v-if="lastRead">
-						<div class="vertical-bar"></div>
-						<div class="info" id="info-last-read">
-							<div class="info-label" id="info-label-last-read">
-								Last Read
-							</div>
-							<div class="info-val" id="info-val-last-read">
-								<span class="small-text">Ch.&nbsp;</span>{{ lastRead }}
+				<div class="horiz-strip progress-strip">
+					<div class="toolbar-group">
+						<div class="info-wrapper">
+							<div class="info" id="info-progress">
+								<div class="info-label" id="info-label-progress">
+									Progress
+								</div>
+								<div class="info-val" id="info-val-updated-date">
+									{{ totalRead }}<span class="small-text">&nbsp;/{{ tocData.chapters.length }}</span>
+								</div>
 							</div>
 						</div>
-						<div>
-							<router-link :to="'/' + tocData.slug + '/' + lastRead" class="btn">Continue &rarr;</router-link>
+						<div class="info-wrapper" v-if="lastRead">
+							<div class="vertical-bar"></div>
+							<div class="info" id="info-last-read">
+								<div class="info-label" id="info-label-last-read">
+									Last Read
+								</div>
+								<div class="info-val" id="info-val-last-read">
+									<span class="small-text">Ch.&nbsp;</span>{{ lastRead }}
+								</div>
+							</div>
+							<div>
+								<router-link :to="'/' + tocData.slug + '/' + lastRead" class="btn">Continue &rarr;</router-link>
+							</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="vertical-spacer"></div>
-
-				<div class="pagination-controls" v-if="totalPages > 1">
+				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
 					<div class="toolbar-group">
 						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
 						<span>Page {{ currentPage }} of {{ totalPages }}</span>
@@ -179,7 +179,7 @@
 				<template v-if="view === 'grid'">
 					<div class="title-grid">
 						<router-link v-for="ch in paginatedChapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="btn list-item" :data-chapter="ch.num">
-							<span class="chapterNum">{{ ch.num }}</span>
+							<span class="chapter-num">{{ ch.num }}</span>
 						</router-link>
 					</div>
 				</template>
@@ -187,7 +187,7 @@
 					<div class="title-list">
 						<div v-for="ch in paginatedChapters" :key="ch.num" class="link-wrapper">
 							<router-link :to="'/' + tocData.slug + '/' + ch.num" class="text-link list-item" :data-chapter="ch.num">
-								<span class="chapterNum small-text">{{ ch.num }}</span><span class="chapterTitle">{{ ch.title }}</span>
+								<span class="chapter-num small-text">{{ ch.num }}</span><span class="chapter-title">{{ ch.title }}</span>
 							</router-link>
 							<span v-if="ch.date" class="date">
 								{{ ch.date }}
@@ -196,24 +196,22 @@
 					</div>
 				</template>
 
-				<div class="pagination-controls" v-if="totalPages > 1">
+				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
 					<div class="toolbar-group">
-						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">&larr; Prev</router-link>
+						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
 						<span>Page {{ currentPage }} of {{ totalPages }}</span>
-						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next &rarr;</router-link>
+						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next ›</router-link>
 					</div>
 					<div class="toolbar-group chapter-range">
 						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
 					</div>
 				</div>
-
-				<div class="vertical-spacer"></div>
 			</template>
 		</div>
 	</template>
 
 	<template id="chapter-view-template">
-		<div id="chapter-container" class="chapter-view active">
+		<div id="chapter-container" class="chapter-view">
 
 			<div class="drawer" id="drawer-chapter" ref="drawer">
 				<div class="btn icon-btn" @click="goToToc" title="Go to TOC">
@@ -236,7 +234,7 @@
 			</div>
 
 			<template v-if="chapterData">
-				<div class="toolbar">
+				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug + '?from=' + chapterData.num">TOC</router-link>
 					</div>
@@ -257,7 +255,7 @@
 					<p v-else v-html="p"></p>
 				</template>
 
-				<div class="toolbar">
+				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug + '?from=' + chapterData.num">TOC</router-link>
 					</div>
