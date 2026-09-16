@@ -20,50 +20,34 @@ def process_book(input_filename, output_dir):
 		return
 
 	with open(input_filename, "r", encoding="utf-8") as file:
-		lines = [line.strip() for line in file if line.strip()]
+		content = file.read()
 
-	if not lines:
+	if not content:
 		print("The input file is empty.")
 		return
 
-	book_title_data = []
+	book_metadata = {}
 	chapter_data = []
-	active_chapter_num = None
-	active_chapter_title = None
-	active_chapter_date = None
-	active_paragraphs = []
 
-	chapter_pattern = re.compile(r"^Chapter\s+(\d+)\s*-\s*(.+?)(\s*\[(.+)\])?$", re.IGNORECASE)
+	separator = "+++++++++++++++++++++++++++++++++++++++++++++++++"
+	parts = content.split(separator)
 
-	for line in lines:
-		match = chapter_pattern.match(line)
-		if match:
-			if active_chapter_num is not None:
-				chapter_data.append({
-					"num": active_chapter_num,
-					"title": active_chapter_title,
-					"date": active_chapter_date,
-					"paragraphs": active_paragraphs,
-				})
-				active_paragraphs = []
-			active_chapter_num = int(match.group(1))
-			active_chapter_title = match.group(2)
-			active_chapter_date = match.group(4)
-		else:
-			if active_chapter_num is None:
-				book_title_data.append(line)
-			else:
-				active_paragraphs.append(line)
+	for line in parts[0].splitlines():
+		key, val = line.split(":", 1)
+		book_metadata[key.strip()] = val.strip()
 
-	if active_chapter_num is not None:
-		chapter_data.append({
-			"num": active_chapter_num,
-			"title": active_chapter_title,
-			"date": active_chapter_date,
-			"paragraphs": active_paragraphs,
-		})
+	for i in range(1, len(parts) - 1, 2):
+		meta_lines = parts[i].strip().splitlines()
 
-	if not book_title_data:
+		chapter = {}
+		for line in meta_lines:
+			key, val = line.split(":", 1)
+			chapter[key.strip()] = val.strip()
+		chapter["text"] = parts[i + 1].split("\n")
+
+		chapter_data.append(chapter)
+
+	if not book_metadata:
 		print("No title found.")
 		return
 
@@ -71,8 +55,7 @@ def process_book(input_filename, output_dir):
 		print("No chapters found.")
 		return
 
-	book_title = book_title_data[0]
-	subtitles = book_title_data[1:]
+	book_title = book_metadata["title"]
 	total_chapters = len(chapter_data)
 	book_slug = os.path.splitext(os.path.basename(input_filename))[0]
 
@@ -90,6 +73,7 @@ def process_book(input_filename, output_dir):
 			"num": current_num,
 			"title": ch["title"],
 			"date": ch["date"],
+			"url": ch["url"],
 			"prev": prev_num,
 			"next": next_num
 		})
@@ -97,9 +81,11 @@ def process_book(input_filename, output_dir):
 		chapter_payload = {
 			"num": current_num,
 			"title": ch["title"],
-			"paragraphs": ch["paragraphs"],
+			"date": ch["date"],
+			"url": ch["url"],
 			"prev": prev_num,
-			"next": next_num
+			"next": next_num,
+			"paragraphs": ch["text"],
 		}
 
 		chapter_filename = os.path.join(specific_book_dir, f"chapter_{current_num}.json")
@@ -109,7 +95,6 @@ def process_book(input_filename, output_dir):
 	toc_payload = {
 		"title": book_title,
 		"slug": book_slug,
-		"subtitles": subtitles,
 		"chapters": toc_chapters
 	}
 
@@ -135,18 +120,18 @@ def main():
 	output_dir = "docs"
 	books_dir = "books"
 	process_dir = "post-process"
-	
+
 	preprocessors = os.listdir(process_dir)
-	
+
 	for book in sorted(os.listdir(books_dir)):
 		book_slug = os.path.splitext(book)[0]
 		book_path = os.path.join(books_dir, book)
 		processor_path = os.path.join(process_dir, f"{book_slug}.py")
 		data_path = os.path.join(process_dir, f"{book_slug}.dat")
 		tmp_path = os.path.join(process_dir, "_tmp", f"{book_slug}.tmp")
-		
+
 		print(f"Processing {book_slug}")
-		
+
 		if os.path.isfile(processor_path):
 			os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
 			if os.path.isfile(data_path):
