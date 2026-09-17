@@ -244,8 +244,9 @@ hr.addendum {
 }
 
 .date {
-	font-family: var(--font-monospace);
-	font-size: 0.95rem;
+	color: var(--color);
+	font-family: var(--font-monospace) !important;
+	font-size: 0.95rem !important;
 }
 
 /**********************************************************/
@@ -342,21 +343,11 @@ button {
 	font-family: var(--font-serif);
 	text-decoration: none;
 	cursor: pointer;
-}
-
-.title-list .link-wrapper {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
 	border-bottom: 1px solid transparent;
 }
 
-.title-list .link-wrapper a {
-	flex: 1;
-}
-
 @media (hover: hover) {
-	.title-list .link-wrapper:has(.text-link:hover) {
+	.text-link:hover {
 		border-bottom: 1px solid var(--accent-color);
 	}
 }
@@ -418,11 +409,11 @@ button {
 }
 
 .title-list {
-	.list-item.read .text-link {
+	.list-item.read {
 		color: color-mix(in srgb, var(--accent-color) 50%, var(--bg-page) 50%);
 	}
 
-	.list-item.last-read .text-link {
+	.list-item.last-read {
 		color: color-mix(in srgb, var(--accent-color) 70%, var(--color-strong) 30%);
 		font-weight: bold;
 	}
@@ -499,6 +490,48 @@ button {
 	height: 2px;
 	width: 80%;
 	margin: 10px auto;
+}
+
+/**********************************************************/
+/* Popup */
+
+.popup-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	background-color: rgba(0, 0, 0, 0.5);
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+}
+
+.popup-dialog {
+	background-color: var(--bg-2);
+	padding: 20px 30px;
+	border-radius: 8px;
+	width: 300px;
+	text-align: center;
+	position: relative;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.popup-content {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+}
+
+.popup-content a {
+	font-family: var(--font-sans)
+}
+
+.close-btn {
+	position: absolute;
+	top: 5px;
+	right: 10px;
 }
 
 /**********************************************************/

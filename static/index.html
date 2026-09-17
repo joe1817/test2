@@ -78,11 +78,9 @@
 
 			<h1 class="page-title">Library</h1>
 			<div class="title-list">
-				<div v-for="book in books" :key="book.slug" class="link-wrapper">
-					<router-link :to="'/' + book.slug" class="text-link">
-						{{ book.title }}
-					</router-link>
-				</div>
+				<router-link v-for="book in books" :key="book.slug" :to="'/' + book.slug" class="text-link horiz-strip">
+					{{ book.title }}
+				</router-link>
 			</div>
 		</div>
 	</template>
@@ -185,14 +183,15 @@
 				</template>
 				<template v-else>
 					<div class="title-list">
-						<div v-for="ch in paginatedChapters" :key="ch.num" class="link-wrapper list-item" :data-chapter="ch.num">
-							<router-link :to="'/' + tocData.slug + '/' + ch.num" class="text-link">
-								<span class="chapter-num small-text">{{ ch.num }}</span><span class="chapter-title">{{ ch.title }}</span>
-							</router-link>
+						<router-link v-for="ch in paginatedChapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="text-link list-item horiz-strip" :data-chapter="ch.num">
+							<span>
+								<span class="chapter-num small-text">{{ ch.num }}</span>
+								<span class="chapter-title">{{ ch.title }}</span>
+							</span>
 							<span v-if="ch.date" class="date">
 								{{ ch.date }}
 							</span>
-						</div>
+						</router-link>
 					</div>
 				</template>
 
@@ -231,9 +230,35 @@
 						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
 					</svg>
 				</div>
+				<div class="btn icon-btn" @click="showPopup = true; console.log(showPopup)" title="Show Info">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="16" x2="12" y2="12"></line>
+						<line x1="12" y1="8" x2="12.01" y2="8"></line>
+					</svg>
+				</div>
 			</div>
 
 			<template v-if="chapterData">
+				<div v-show="showPopup" class="popup-overlay" @click.stop="showPopup = false">
+					<div class="popup-dialog">
+						<span class="btn icon-btn close-btn" @click.stop="showPopup = false">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
+							</svg>
+						</span>
+						<div class="popup-content">
+							<p>Chapter: {{chapterData.num}}</p>
+							<p v-if="chapterData.position">Position: {{chapterData.position}}</p>
+							<p v-if="chapterData.date">Date: {{chapterData.date}}</p>
+							<p v-if="chapterData.wordCount">Word Count: {{chapterData.wordCount}}</p>
+							<p v-if="chapterData.translator">Translator: {{chapterData.translator}}</p>
+							<a v-if="chapterData.url" class="text-link" :href="chapterData.url">Japanese Source</a>
+						</div>
+					</div>
+				</div>
+
 				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">
 						<router-link class="btn" :to="'/' + bookSlug + '?from=' + chapterData.num">TOC</router-link>
@@ -250,7 +275,7 @@
 
 				<p class="chapter-num">Chapter {{ chapterData.num }}</p>
 				<h1 class="chapter-title">{{ chapterData.title }}</h1>
-				<template v-for="(p, index) in chapterData.paragraphs" :key="index">
+				<template v-for="(p, index) in chapterData.text" :key="index">
 					<hr class="time-skip" v-if="p === '---'">
 					<hr class="addendum" v-else-if="p === '====='">
 					<p v-else v-html="p"></p>
@@ -525,7 +550,8 @@
 			data() {
 				return {
 					chapterData: null,
-					bookSlug: this.$route.params.bookSlug
+					bookSlug: this.$route.params.bookSlug,
+					showPopup: false,
 				};
 			},
 			async created() {
