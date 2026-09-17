@@ -69,24 +69,21 @@ def process_book(input_filename, output_dir):
 		prev_num = chapter_data[index - 1]["num"] if index > 0 else None
 		next_num = chapter_data[index + 1]["num"] if index < total_chapters - 1 else None
 
-		toc_chapters.append({
-			"num": current_num,
-			"title": ch["title"],
-			"date": ch["date"],
-			"url": ch["url"],
-			"prev": prev_num,
-			"next": next_num
-		})
-
 		chapter_payload = {
 			"num": current_num,
 			"title": ch["title"],
 			"date": ch["date"],
-			"url": ch["url"],
 			"prev": prev_num,
 			"next": next_num,
-			"paragraphs": ch["text"],
+			"text": ch["text"],
+			"position": f"{index+1}/{len(chapter_data)}",
+			"wordCount": sum(len(line.split()) for line in ch["text"]),
+			"url": ch["url"],
 		}
+
+		toc_chapters.append({
+			k:v for k,v in chapter_payload.items() if k != "text"
+		})
 
 		chapter_filename = os.path.join(specific_book_dir, f"chapter_{current_num}.json")
 		with open(chapter_filename, "w", encoding="utf-8") as json_file:
