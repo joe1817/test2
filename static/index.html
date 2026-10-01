@@ -681,8 +681,10 @@
 					const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
 					if (document.fullscreenElement && isMobile) {
 						document.body.classList.add("mobile-fullscreen");
+						this.$refs.mainWrapper.classList.add("noselect");
 					} else {
 						document.body.classList.remove("mobile-fullscreen");
+						this.$refs.mainWrapper.classList.remove("noselect");
 					}
 					this.updateProgressBar();
 				});
@@ -721,8 +723,6 @@
 					} else {
 						this.toggleFullScreen();
 					}
-
-					this.$refs.mainWrapper.classList.toggle("noselect");
 				}
 			}
 		});
