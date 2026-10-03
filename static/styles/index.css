@@ -177,8 +177,11 @@ body.mobile-fullscreen .progress-bar {
 p {
 	margin-top: 0;
 	margin-bottom: 1rem;
-	text-align: justify;
 	line-height: 1.6rem;
+}
+
+.chapter-text p {
+	text-align: justify;
 }
 
 hr {
@@ -319,6 +322,13 @@ button {
 	}
 }
 
+.text-link {
+	color: var(--accent-color);
+	font-family: var(--font-serif);
+	text-decoration: none;
+	cursor: pointer;
+}
+
 @media (max-width: 768px) {
 	.pagination-controls {
 		justify-content: center;
@@ -336,44 +346,7 @@ button {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
 	gap: 10px;
-}
 
-.text-link {
-	color: var(--accent-color);
-	font-family: var(--font-serif);
-	text-decoration: none;
-	cursor: pointer;
-	border-bottom: 1px solid transparent;
-}
-
-@media (hover: hover) {
-	.text-link:hover {
-		border-bottom: 1px solid var(--accent-color);
-	}
-}
-
-.title-list {
-	margin: 2rem 0;
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.title-list .text-link {
-	font-size: 1.15rem;
-}
-
-.title-list .chapter-num {
-	color: color-mix(in srgb, var(--accent-color) 70%, var(--bg-page) 30%);
-	font-family: var(--font-monospace);
-	font-size: 0.8rem;
-}
-
-.title-list .chapter-title {
-	margin-left: 20px;
-}
-
-.title-grid {
 	.list-item {
 		width: 70px;
 		font-weight: bold;
@@ -409,6 +382,44 @@ button {
 }
 
 .title-list {
+	margin: 2rem 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+
+	.text-link {
+		border-bottom: 1px solid transparent;
+	}
+
+	@media (hover: hover) {
+		.text-link:hover {
+			border-bottom: 1px solid var(--accent-color);
+		}
+	}
+
+	.text-link {
+		font-size: 1.15rem;
+	}
+
+	.chapter-num-title {
+		padding-left: 50px;
+		text-indent: -50px;
+		margin-bottom: 0rem;
+	}
+
+	.chapter-num {
+		color: color-mix(in srgb, var(--accent-color) 70%, var(--bg-page) 30%);
+		font-family: var(--font-monospace);
+		font-size: 0.8rem;
+		display: inline-block;
+		width: 50px;
+		text-indent: 0;
+	}
+
+	.chapter-title {
+		/* margin-left: 20px; */
+	}
+
 	.list-item.read {
 		color: color-mix(in srgb, var(--accent-color) 50%, var(--bg-page) 50%);
 	}
@@ -417,10 +428,11 @@ button {
 		color: color-mix(in srgb, var(--accent-color) 70%, var(--color-strong) 30%);
 		font-weight: bold;
 	}
-	
+
 	.date {
 		flex-shrink: 0;
 		align-self: flex-start;
+		padding-top: 2px;
 	}
 
 	@media (max-width: 768px) {
@@ -435,6 +447,7 @@ button {
 	font-size: 1.8rem;
 	line-height: 1.2;
 	margin-top: 0;
+	margin-bottom: 28px;
 	text-align: center;
 }
 
@@ -518,7 +531,6 @@ button {
 	padding: 20px 30px;
 	border-radius: 8px;
 	width: 300px;
-	text-align: center;
 	position: relative;
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -529,8 +541,18 @@ button {
 	align-items: start;
 }
 
+.popup-content .key {
+	font-weight: bold;
+}
+
+.popup-content .val {
+	text-decoration: underline;
+	text-decoration-style: dotted;
+}
+
 .popup-content a {
-	font-family: var(--font-sans)
+	font-family: var(--font-sans);
+	margin: 0 auto;
 }
 
 .close-btn {

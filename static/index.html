@@ -184,13 +184,13 @@
 				<template v-else>
 					<div class="title-list">
 						<router-link v-for="ch in paginatedChapters" :key="ch.num" :to="'/' + tocData.slug + '/' + ch.num" class="text-link list-item horiz-strip" :data-chapter="ch.num">
-							<span>
+							<div class="chapter-num-title">
 								<span class="chapter-num small-text">{{ ch.num }}</span>
 								<span class="chapter-title">{{ ch.title }}</span>
-							</span>
-							<span v-if="ch.date" class="date">
+							</div>
+							<div v-if="ch.date" class="date">
 								{{ ch.date }}
-							</span>
+							</div>
 						</router-link>
 					</div>
 				</template>
@@ -249,13 +249,14 @@
 							</svg>
 						</span>
 						<div class="popup-content">
-							<p>Title: {{chapterData.title}}</p>
-							<p>Chapter: {{chapterData.num}}</p>
-							<p v-if="chapterData.position">Position: {{chapterData.position}}</p>
-							<p v-if="chapterData.date">Date: {{chapterData.date}}</p>
-							<p v-if="chapterData.wordCount">Word Count: {{chapterData.wordCount}}</p>
-							<p v-if="chapterData.translator">Translator: {{chapterData.translator}}</p>
-							<a v-if="chapterData.url" class="text-link" :href="chapterData.url">Japanese Source</a>
+							<p style="align-self: center; font-weight: bold;">Chapter Info</p>
+							<p><span class="key">Chapter:</span> <span class="val">{{chapterData.num}}</span></p>
+							<p><span class="key">Title:</span> <span class="val">{{chapterData.title}}</span></p>
+							<p v-if="chapterData.date"><span class="key">Date:</span> <span class="val">{{chapterData.date}}</span></p>
+							<p v-if="chapterData.position"><span class="key">Position:</span> <span class="val">{{chapterData.position}}</span></p>
+							<p v-if="chapterData.wordCount"><span class="key">Word Count:</span> <span class="val">{{chapterData.wordCount}}</span></p>
+							<p v-if="chapterData.translator"><span class="key">Translator:</span> <span class="val">{{chapterData.translator}}</span></p>
+							<p v-if="chapterData.url" style="align-self: center;"><a class="btn" :href="chapterData.url">Japanese Source</a></p>
 						</div>
 					</div>
 				</div>
@@ -276,11 +277,13 @@
 
 				<p class="chapter-num">Chapter {{ chapterData.num }}</p>
 				<h1 class="chapter-title">{{ chapterData.title }}</h1>
-				<template v-for="(p, index) in chapterData.text" :key="index">
-					<hr class="time-skip" v-if="p === '---'">
-					<hr class="addendum" v-else-if="p === '====='">
-					<p v-else v-html="p"></p>
-				</template>
+				<div class="chapter-text">
+					<template v-for="(p, index) in chapterData.text" :key="index">
+						<hr class="time-skip" v-if="p === '---'">
+						<hr class="addendum" v-else-if="p === '-----'">
+						<p v-else-if="p" v-html="p"></p>
+					</template>
+				</div>
 
 				<div class="horiz-strip toolbar">
 					<div class="toolbar-group">

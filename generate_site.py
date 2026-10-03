@@ -44,6 +44,7 @@ def process_book(input_filename, output_dir):
 			key, val = line.split(":", 1)
 			chapter[key.strip()] = val.strip()
 		chapter["text"] = parts[i + 1].split("\n")
+		chapter["num"] = int(chapter["num"])
 
 		chapter_data.append(chapter)
 
