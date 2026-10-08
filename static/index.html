@@ -164,12 +164,27 @@
 				</div>
 
 				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
-					<div class="toolbar-group">
-						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
-						<span>Page {{ currentPage }} of {{ totalPages }}</span>
-						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next ›</router-link>
+					<div class="toolbar-group pagination-row">
+						<template v-if="showFirstButton">
+							<router-link class="btn" :to="{ query: { ...$route.query, page: 1 } }">&laquo;</router-link>
+							<button type="button" class="btn ellipsis-btn" @click="promptForPage">...</button>
+						</template>
+
+						<router-link
+							v-for="p in displayedPages"
+							:key="p"
+							class="btn"
+							:class="{ active: p === currentPage }"
+							:to="{ query: { ...$route.query, page: p } }">
+							{{ p }}
+						</router-link>
+
+						<template v-if="showLastButton">
+							<button type="button" class="btn ellipsis-btn" @click="promptForPage">...</button>
+							<router-link class="btn" :to="{ query: { ...$route.query, page: totalPages } }">&raquo;</router-link>
+						</template>
 					</div>
-					<div class="toolbar-group chapter-range">
+					<div class="toolbar-group chapter-range" v-if="paginatedRange">
 						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
 					</div>
 				</div>
@@ -196,15 +211,31 @@
 				</template>
 
 				<div class="horiz-strip pagination-controls" v-if="totalPages > 1">
-					<div class="toolbar-group">
-						<router-link class="btn" :class="{ disabled: currentPage <= 1 }" :to="{ query: { page: currentPage - 1 } }">‹ Prev</router-link>
-						<span>Page {{ currentPage }} of {{ totalPages }}</span>
-						<router-link class="btn" :class="{ disabled: currentPage >= totalPages }" :to="{ query: { page: currentPage + 1 } }">Next ›</router-link>
+					<div class="toolbar-group pagination-row">
+						<template v-if="showFirstButton">
+							<router-link class="btn" :to="{ query: { ...$route.query, page: 1 } }">&laquo;</router-link>
+							<button type="button" class="btn ellipsis-btn" @click="promptForPage">...</button>
+						</template>
+
+						<router-link
+							v-for="p in displayedPages"
+							:key="p"
+							class="btn"
+							:class="{ active: p === currentPage }"
+							:to="{ query: { ...$route.query, page: p } }">
+							{{ p }}
+						</router-link>
+
+						<template v-if="showLastButton">
+							<button type="button" class="btn ellipsis-btn" @click="promptForPage">...</button>
+							<router-link class="btn" :to="{ query: { ...$route.query, page: totalPages } }">&raquo;</router-link>
+						</template>
 					</div>
-					<div class="toolbar-group chapter-range">
+					<div class="toolbar-group chapter-range" v-if="paginatedRange">
 						{{ `Viewing ${this.paginatedRange[0]} — ${this.paginatedRange[1]}` }}
 					</div>
 				</div>
+
 			</template>
 		</div>
 	</template>
@@ -379,6 +410,32 @@
 					if (!this.tocData || !this.tocData.chapters) return 1;
 					return Math.ceil(this.tocData.chapters.length / this.perPage);
 				},
+				displayedPages() {
+					let start = Math.max(1, this.currentPage - 2);
+					let end = Math.min(this.totalPages, this.currentPage + 2);
+
+					// Adjust window if fewer than 5 pages are shown due to boundary limits
+					let count = end - start + 1;
+					if (count < 5 && this.totalPages >= 5) {
+						if (start === 1) {
+							end = Math.min(this.totalPages, start + 4);
+						} else if (end === this.totalPages) {
+							start = Math.max(1, end - 4);
+						}
+					}
+
+					const pages = [];
+					for (let i = start; i <= end; i++) {
+						pages.push(i);
+					}
+					return pages;
+				},
+				showFirstButton() {
+					return this.displayedPages.length > 0 && this.displayedPages[0] > 1;
+				},
+				showLastButton() {
+					return this.displayedPages.length > 0 && this.displayedPages[this.displayedPages.length - 1] < this.totalPages;
+				},
 				paginatedChapters() {
 					if (!this.tocData || !this.tocData.chapters) return [];
 					const start = (this.currentPage - 1) * this.perPage;
@@ -388,7 +445,7 @@
 				paginatedRange() {
 					if (!this.tocData || !this.tocData.chapters) return [0, 0];
 					const start = (this.currentPage - 1) * this.perPage;
-					const end = Math.min(start + this.perPage, this.tocData.chapters.length-1);
+					const end = Math.min(start + this.perPage - 1, this.tocData.chapters.length - 1);
 					return [this.tocData.chapters[start].num, this.tocData.chapters[end].num];
 				},
 				updatedDate() {
@@ -543,6 +600,15 @@
 							router.replace({ query: { } });
 						} else {
 							router.replace({ query: { page: page } });
+						}
+					}
+				},
+				promptForPage() {
+					const input = window.prompt("Enter page number:");
+					if (input !== null) {
+						const page = parseInt(input, 10);
+						if (!isNaN(page) && page >= 1 && page <= this.totalPages) {
+							this.$router.push({ query: { ...this.$route.query, page } });
 						}
 					}
 				}

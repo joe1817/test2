@@ -339,6 +339,12 @@ button {
 	}
 }
 
+.pagination-row .active {
+	color: var(--accent-color);
+	background: var(--accent-bg);
+	border-color: var(--accent-border);
+}
+
 .title-grid {
 	margin: 2rem 0;
 	/* Calculation: 10 columns * 70px + 9 gaps of 10px + side padding = 890px */
