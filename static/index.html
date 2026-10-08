@@ -111,6 +111,14 @@
 						  <rect x="14" y="3" width="7" height="18" rx="0.5" />
 					</svg>
 				</div>
+				<div class="btn icon-btn" @click="changeSortMode" title="Change Sort Order">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M17 2l4 4-4 4" />
+						<path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+						<path d="M7 22l-4-4 4-4" />
+						<path d="M21 13v1a4 4 0 0 1-4 4H3" />
+					</svg>
+				</div>
 				<div class="btn icon-btn danger" @click="resetProgress" title="Reset Progress">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -399,16 +407,55 @@
 					perPage: 100,
 					lastRead: null,
 					totalRead: 0,
+					sortBy: "num",       // Can be a string property name or a function: chapter => chapter.num
+					sortReverse: false,  // Set to true to reverse the sort order
+					filterQuery: ""      // Placeholder for future filtering support
 				};
 			},
 			computed: {
+				sortedTocData() {
+					if (!this.tocData || !this.tocData.chapters) return null;
+
+					// Clone the chapters array to avoid mutating original fetched data
+					let chapters = [...this.tocData.chapters];
+
+					// Future filtering logic
+					if (this.filterQuery) {
+						const query = this.filterQuery.toLowerCase();
+						chapters = chapters.filter(ch =>
+							(ch.title && ch.title.toLowerCase().includes(query)) ||
+							String(ch.num).includes(query)
+						);
+					}
+
+					// Sorting logic supporting string keys or custom functions
+					chapters.sort((a, b) => {
+						let valA, valB;
+						if (typeof this.sortBy === "function") {
+							valA = this.sortBy(a);
+							valB = this.sortBy(b);
+						} else {
+							valA = a[this.sortBy];
+							valB = b[this.sortBy];
+						}
+
+						if (valA < valB) return this.sortReverse ? 1 : -1;
+						if (valA > valB) return this.sortReverse ? -1 : 1;
+						return 0;
+					});
+
+					return {
+						...this.tocData,
+						chapters: chapters
+					};
+				},
 				currentPage() {
 					const page = parseInt(this.$route.query.page, 10);
 					return (!isNaN(page) && page > 0) ? page : 1;
 				},
 				totalPages() {
-					if (!this.tocData || !this.tocData.chapters) return 1;
-					return Math.ceil(this.tocData.chapters.length / this.perPage);
+					if (!this.sortedTocData || !this.sortedTocData.chapters) return 1;
+					return Math.ceil(this.sortedTocData.chapters.length / this.perPage);
 				},
 				displayedPages() {
 					let start = Math.max(1, this.currentPage - 2);
@@ -437,19 +484,19 @@
 					return this.displayedPages.length > 0 && this.displayedPages[this.displayedPages.length - 1] < this.totalPages;
 				},
 				paginatedChapters() {
-					if (!this.tocData || !this.tocData.chapters) return [];
+					if (!this.sortedTocData || !this.sortedTocData.chapters) return [];
 					const start = (this.currentPage - 1) * this.perPage;
 					const end = start + this.perPage;
-					return this.tocData.chapters.slice(start, end);
+					return this.sortedTocData.chapters.slice(start, end);
 				},
 				paginatedRange() {
-					if (!this.tocData || !this.tocData.chapters) return [0, 0];
+					if (!this.sortedTocData || !this.sortedTocData.chapters || this.sortedTocData.chapters.length === 0) return [0, 0];
 					const start = (this.currentPage - 1) * this.perPage;
-					const end = Math.min(start + this.perPage - 1, this.tocData.chapters.length - 1);
-					return [this.tocData.chapters[start].num, this.tocData.chapters[end].num];
+					const end = Math.min(start + this.perPage - 1, this.sortedTocData.chapters.length - 1);
+					return [this.sortedTocData.chapters[start].num, this.sortedTocData.chapters[end].num];
 				},
 				updatedDate() {
-					const date = this.tocData?.chapters?.at(-1)?.date;
+					const date = this.sortedTocData?.chapters?.at(-1)?.date;
 					return date ? date : "---";
 				},
 			},
@@ -480,8 +527,8 @@
 				document.addEventListener("click", this.clickListener);
 
 				await this.fetchToc();
-				this.fromParamToPage();
 				this.loadView();
+				this.fromParamToPage();
 				this.$nextTick(() => {
 					this.loadProgress();
 				});
@@ -522,8 +569,16 @@
 				loadView() {
 					const bookSlug = this.$route.params.bookSlug;
 					const viewCookie = this.getCookie("view_mode_" + bookSlug);
-					if (viewCookie === "list" || viewCookie === "grid") {
+					if (viewCookie !== "") {
 						this.view = viewCookie;
+					}
+					const sortKey = this.getCookie("sort_key_" + bookSlug);
+					if (sortKey !== "") {
+						this.sortBy = sortKey;
+					}
+					const sortMode = this.getCookie("sort_mode_" + bookSlug);
+					if (sortMode !== "") {
+						this.sortReverse = sortMode === "reverse";
 					}
 				},
 				loadProgress() {
@@ -581,6 +636,18 @@
 						this.loadProgress();
 					});
 				},
+				changeSortMode() {
+					this.sortReverse = !this.sortReverse;
+					const newVal = this.sortReverse ? "reverse" : "normal";
+					const bookSlug = this.$route.params.bookSlug;
+					const d = new Date();
+					d.setTime(d.getTime() + (365*24*60*60*1000));
+					document.cookie = `sort_mode_${bookSlug}=${newVal};expires=${d.toUTCString()};path=/;`;
+
+					this.$nextTick(() => {
+						this.loadProgress();
+					});
+				},
 				getCookie(name) {
 					const value = "; " + document.cookie;
 					const parts = value.split("; " + name + "=");
@@ -588,9 +655,10 @@
 					return "";
 				},
 				getPageNum(chapterNum) {
-					if (!this.tocData || !this.tocData.chapters) return 1;
-					const page = Math.floor((chapterNum - this.tocData.chapters[0].num) / this.perPage) + 1;
-					return page;
+					if (!this.sortedTocData || !this.sortedTocData.chapters) return 1;
+					const index = this.sortedTocData.chapters.findIndex(ch => ch.num === chapterNum);
+					if (index === -1) return 1;
+					return Math.floor(index / this.perPage) + 1;
 				},
 				fromParamToPage() {
 					const fromArg = parseInt(this.$route.query.from);
