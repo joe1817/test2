@@ -269,7 +269,7 @@
 						<path d="M16 21h3a2 2 0 0 0 2-2v-3" />
 					</svg>
 				</div>
-				<div class="btn icon-btn" @click="showPopup = true; console.log(showPopup)" title="Show Info">
+				<div class="btn icon-btn" @click="showPopup = true" title="Show Info">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<circle cx="12" cy="12" r="10"></circle>
 						<line x1="12" y1="16" x2="12" y2="12"></line>
@@ -342,6 +342,25 @@
 	</template>
 
 	<script>
+		function getCookie(name, renew) {
+			const value = "; " + document.cookie;
+			const parts = value.split("; " + name + "=");
+
+			if (parts.length === 2) {
+				const cookieValue = parts.pop().split(";").shift();
+
+				if (renew !== undefined && renew !== null) {
+					const d = new Date();
+					d.setTime(d.getTime() + (renew * 24 * 60 * 60 * 1000));
+					document.cookie = name + "=" + cookieValue + "; expires=" + d.toUTCString() + "; path=/";
+				}
+
+				return cookieValue;
+			}
+
+			return "";
+		}
+
 		const queryParams = new URLSearchParams(window.location.search);
 		const redirectedPath = queryParams.get("p");
 		if (redirectedPath) {
@@ -565,16 +584,16 @@
 				},
 				loadView() {
 					const bookSlug = this.$route.params.bookSlug;
-					const viewCookie = this.getCookie("toc_view_mode_" + bookSlug);
-					if (viewCookie !== "") {
-						this.view = viewCookie;
+					const viewMode = localStorage.getItem("toc_view_mode_" + bookSlug);
+					if (viewMode) {
+						this.view = viewMode;
 					}
-					const sortKey = this.getCookie("toc_sort_key_" + bookSlug);
-					if (sortKey !== "") {
+					const sortKey = localStorage.getItem("toc_sort_key_" + bookSlug);
+					if (sortKey) {
 						this.sortBy = sortKey;
 					}
-					const sortMode = this.getCookie("toc_sort_mode_" + bookSlug);
-					if (sortMode !== "") {
+					const sortMode = localStorage.getItem("toc_sort_mode_" + bookSlug);
+					if (sortMode) {
 						this.sortReverse = sortMode === "reverse";
 					}
 				},
@@ -584,10 +603,10 @@
 					});
 
 					const bookSlug = this.$route.params.bookSlug;
-					const historyCookie = this.getCookie("toc_reading_history_" + bookSlug);
-					if (historyCookie) {
+					const historyData = localStorage.getItem("toc_read_" + bookSlug);
+					if (historyData) {
 						try {
-							const history = historyCookie.split(",");
+							const history = historyData.split(",");
 							this.lastRead = history[history.length - 1];
 							let totalRead = 0;
 							history.forEach(ch => {
@@ -603,7 +622,7 @@
 							});
 							this.totalRead = totalRead;
 						} catch (e) {
-							console.error("Could not parse reading history cookie", e);
+							console.error("Could not parse reading history data", e);
 						}
 					} else {
 						this.lastRead = null;
@@ -613,7 +632,7 @@
 				resetProgress() {
 					const bookSlug = this.$route.params.bookSlug;
 					if (window.confirm("Are you sure you want to reset your reading progress for this book?")) {
-						document.cookie = `toc_reading_history_${bookSlug}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+						localStorage.removeItem("toc_read_" + bookSlug);
 						this.$nextTick(() => {
 							this.loadProgress();
 						});
@@ -623,33 +642,23 @@
 					this.$router.push("/");
 				},
 				changeView() {
-					this.view = this.view === "grid" ? "list" : "grid";
 					const bookSlug = this.$route.params.bookSlug;
-					const d = new Date();
-					d.setTime(d.getTime() + (365*24*60*60*1000));
-					document.cookie = `toc_view_mode_${bookSlug}=${this.view};expires=${d.toUTCString()};path=/;`;
+					this.view = this.view === "grid" ? "list" : "grid";
+					localStorage.setItem("toc_view_mode_" + bookSlug, this.view);
 
 					this.$nextTick(() => {
 						this.loadProgress();
 					});
 				},
 				changeSortMode() {
+					const bookSlug = this.$route.params.bookSlug;
 					this.sortReverse = !this.sortReverse;
 					const newVal = this.sortReverse ? "reverse" : "normal";
-					const bookSlug = this.$route.params.bookSlug;
-					const d = new Date();
-					d.setTime(d.getTime() + (365*24*60*60*1000));
-					document.cookie = `toc_sort_mode_${bookSlug}=${newVal};expires=${d.toUTCString()};path=/;`;
+					localStorage.setItem("toc_sort_mode_" + bookSlug, newVal);
 
 					this.$nextTick(() => {
 						this.loadProgress();
 					});
-				},
-				getCookie(name) {
-					const value = "; " + document.cookie;
-					const parts = value.split("; " + name + "=");
-					if (parts.length === 2) return parts.pop().split(";").shift();
-					return "";
 				},
 				getPageNum(chapterNum) {
 					if (!this.sortedTocData || !this.sortedTocData.chapters) return 1;
@@ -762,27 +771,19 @@
 						this.$router.push(`/${this.bookSlug}/${chapterNum}`);
 					}
 				},
-				getCookie(name) {
-					const value = "; " + document.cookie;
-					const parts = value.split("; " + name + "=");
-					if (parts.length === 2) return parts.pop().split(";").shift();
-					return "";
-				},
 				recordChapterView(bookSlug, chNum) {
 					let history = [];
-					const cookieVal = this.getCookie("toc_reading_history_" + bookSlug);
-					if (cookieVal) {
+					const historyData = localStorage.getItem("toc_read_" + bookSlug);
+					if (historyData) {
 						try {
-							history = cookieVal.split(",");
+							history = historyData.split(",");
 						} catch(e) {
 							history = [];
 						}
 					}
 					history = history.filter(ch => ch !== chNum);
 					history.push(chNum);
-					const d = new Date();
-					d.setTime(d.getTime() + (365*24*60*60*1000));
-					document.cookie = `toc_reading_history_${bookSlug}=` + history.join(",") + ";expires=" + d.toUTCString() + ";path=/;";
+					localStorage.setItem("toc_read_" + bookSlug, history.join(","));
 				}
 			}
 		};
