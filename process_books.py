@@ -121,12 +121,9 @@ def process_book(input_filename, output_dir):
 			json.dump(catalog, cat_file, ensure_ascii=False)
 
 def main():
-	static_dir = "static"
 	output_dir = "docs"
 	books_dir = "books"
-	process_dir = "process-book"
-
-	preprocessors = os.listdir(process_dir)
+	process_dir = "processors"
 
 	for book in sorted(os.listdir(books_dir)):
 		book_slug = os.path.splitext(book)[0]
@@ -149,10 +146,7 @@ def main():
 		else:
 			process_book(book_path, output_dir)
 
-	if os.path.exists(static_dir):
-		shutil.copytree(static_dir, output_dir, dirs_exist_ok=True)
-
-	print(f"Successfully generated site in the '{output_dir}' directory.")
+	print(f"Successfully generated site data in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
 	main()
